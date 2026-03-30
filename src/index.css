@@ -1,0 +1,407 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    /* Core palette */
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 142 72% 29%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 142 60% 35%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 20%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 142 76% 94%;
+    --accent-foreground: 142 72% 20%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 142 72% 29%;
+
+    --radius: 0.75rem;
+
+    /* Status — design system tokens */
+    --status-nao-iniciado: 229 84% 90%;
+    --status-nao-iniciado-text: 243 75% 41%;
+    --status-pendente: 48 96% 89%;
+    --status-pendente-text: 28 80% 29%;
+    --status-andamento: 214 95% 93%;
+    --status-andamento-text: 221 83% 53%;
+    --status-revisao: 270 95% 93%;
+    --status-revisao-text: 272 72% 40%;
+    --status-concluido: 142 76% 94%;
+    --status-concluido-text: 143 64% 24%;
+    --status-critico: 0 93% 94%;
+    --status-critico-text: 0 74% 35%;
+
+    /* Legacy compat */
+    --status-not-authenticated: 0 72% 51%;
+    --status-not-authenticated-bg: 0 93% 94%;
+    --status-not-started: 28 80% 52%;
+    --status-not-started-bg: 48 96% 89%;
+    --status-pending: 221 83% 53%;
+    --status-pending-bg: 214 95% 93%;
+    --status-done: 142 72% 29%;
+    --status-done-bg: 142 76% 94%;
+    --status-renovation: 270 50% 50%;
+    --status-renovation-bg: 270 95% 93%;
+
+    --points: 38 92% 50%;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 16% 47%;
+    --sidebar-primary: 142 72% 29%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 142 76% 94%;
+    --sidebar-accent-foreground: 142 72% 20%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 142 72% 29%;
+  }
+
+  .dark {
+    --background: 222 47% 8%;
+    --foreground: 210 40% 92%;
+
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 92%;
+
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 92%;
+
+    --primary: 142 72% 35%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 142 60% 40%;
+
+    --secondary: 222 30% 16%;
+    --secondary-foreground: 210 40% 85%;
+
+    --muted: 222 30% 16%;
+    --muted-foreground: 215 16% 56%;
+
+    --accent: 142 40% 16%;
+    --accent-foreground: 142 72% 70%;
+
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 222 30% 20%;
+    --input: 222 30% 20%;
+    --ring: 142 72% 35%;
+
+    /* Status — dark mode */
+    --status-nao-iniciado: 229 50% 18%;
+    --status-nao-iniciado-text: 229 84% 75%;
+    --status-pendente: 48 50% 16%;
+    --status-pendente-text: 48 96% 72%;
+    --status-andamento: 214 50% 18%;
+    --status-andamento-text: 214 95% 75%;
+    --status-revisao: 270 50% 18%;
+    --status-revisao-text: 270 95% 75%;
+    --status-concluido: 142 40% 16%;
+    --status-concluido-text: 142 76% 70%;
+    --status-critico: 0 50% 18%;
+    --status-critico-text: 0 93% 75%;
+
+    /* Legacy compat */
+    --status-not-authenticated: 0 62% 45%;
+    --status-not-authenticated-bg: 0 50% 18%;
+    --status-not-started: 28 70% 42%;
+    --status-not-started-bg: 48 50% 16%;
+    --status-pending: 221 73% 48%;
+    --status-pending-bg: 214 50% 18%;
+    --status-done: 142 72% 35%;
+    --status-done-bg: 142 40% 16%;
+    --status-renovation: 270 40% 45%;
+    --status-renovation-bg: 270 50% 18%;
+
+    --points: 38 82% 45%;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+
+    /* Sidebar */
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 215 16% 56%;
+    --sidebar-primary: 142 72% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 142 40% 16%;
+    --sidebar-accent-foreground: 142 72% 70%;
+    --sidebar-border: 222 30% 20%;
+    --sidebar-ring: 142 72% 35%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .shadow-card {
+    box-shadow: var(--shadow-sm);
+  }
+  .shadow-card-hover {
+    box-shadow: var(--shadow-md);
+  }
+  .shadow-elevated {
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Status utility classes */
+  .status-nao-iniciado {
+    background-color: hsl(var(--status-nao-iniciado));
+    color: hsl(var(--status-nao-iniciado-text));
+  }
+  .status-pendente {
+    background-color: hsl(var(--status-pendente));
+    color: hsl(var(--status-pendente-text));
+  }
+  .status-andamento {
+    background-color: hsl(var(--status-andamento));
+    color: hsl(var(--status-andamento-text));
+  }
+  .status-revisao {
+    background-color: hsl(var(--status-revisao));
+    color: hsl(var(--status-revisao-text));
+  }
+  .status-concluido {
+    background-color: hsl(var(--status-concluido));
+    color: hsl(var(--status-concluido-text));
+  }
+  .status-critico {
+    background-color: hsl(var(--status-critico));
+    color: hsl(var(--status-critico-text));
+  }
+}
+
+/* Animations — fast & subtle */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes neon-pulse {
+  0%, 100% { box-shadow: 0 0 5px hsl(var(--primary) / 0.3), 0 0 10px hsl(var(--primary) / 0.15); }
+  50% { box-shadow: 0 0 10px hsl(var(--primary) / 0.5), 0 0 20px hsl(var(--primary) / 0.25), 0 0 30px hsl(var(--primary) / 0.1); }
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(60px) rotate(360deg); opacity: 0; }
+}
+
+@keyframes celebration-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.15s ease-out forwards;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-neon-pulse {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+.animate-celebration {
+  animation: celebration-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Neon glow effect on hover */
+.neon-hover {
+  transition: all 0.3s ease;
+}
+.neon-hover:hover {
+  box-shadow: 0 0 10px hsl(var(--primary) / 0.5), 0 0 20px hsl(var(--primary) / 0.25), 0 0 40px hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary) / 0.6);
+}
+
+/* Neon glow always-on (for active states) */
+.neon-active {
+  box-shadow: 0 0 8px hsl(var(--primary) / 0.4), 0 0 16px hsl(var(--primary) / 0.2);
+  border-color: hsl(var(--primary) / 0.4);
+}
+
+/* Gradient hover effect for cards */
+.gradient-hover {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+.gradient-hover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.12), hsl(142 80% 50% / 0.06), hsl(200 80% 50% / 0.12));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+}
+.gradient-hover:hover::before {
+  opacity: 1;
+}
+.gradient-hover > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* 3D Button effect */
+.btn-3d {
+  transform: translateY(0) perspective(500px) rotateX(0);
+  box-shadow: 0 4px 0 hsl(var(--primary) / 0.5), 0 6px 14px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+.btn-3d:hover {
+  transform: translateY(-3px) perspective(500px) rotateX(2deg);
+  box-shadow: 0 7px 0 hsl(var(--primary) / 0.5), 0 10px 20px rgba(0, 0, 0, 0.25), 0 0 15px hsl(var(--primary) / 0.3);
+}
+.btn-3d:active {
+  transform: translateY(2px) perspective(500px) rotateX(-1deg);
+  box-shadow: 0 2px 0 hsl(var(--primary) / 0.5), 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Neon border glow for columns */
+.neon-column {
+  transition: all 0.3s ease;
+  border: 1px solid hsl(var(--border));
+}
+.neon-column:hover {
+  border-color: hsl(var(--primary) / 0.4);
+  box-shadow: inset 0 0 30px hsl(var(--primary) / 0.06), 0 0 20px hsl(var(--primary) / 0.12);
+}
+
+/* Neon input focus */
+.neon-input:focus {
+  box-shadow: 0 0 10px hsl(var(--primary) / 0.3), 0 0 20px hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary) / 0.5);
+}
+
+/* Neon sidebar link */
+.neon-sidebar-link {
+  transition: all 0.3s ease;
+  position: relative;
+}
+.neon-sidebar-link:hover {
+  box-shadow: 0 0 8px hsl(var(--primary) / 0.3), 0 0 16px hsl(var(--primary) / 0.15);
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.05));
+}
+.neon-sidebar-link.active {
+  box-shadow: 0 0 10px hsl(var(--primary) / 0.4), 0 0 20px hsl(var(--primary) / 0.2);
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.15), hsl(var(--primary) / 0.08));
+}
+
+/* Neon card with subtle glow */
+.neon-card {
+  transition: all 0.3s ease;
+  border: 1px solid hsl(var(--border));
+}
+.neon-card:hover {
+  border-color: hsl(var(--primary) / 0.3);
+  box-shadow: 0 4px 20px hsl(var(--primary) / 0.1), 0 0 10px hsl(var(--primary) / 0.08);
+}
+
+/* Confetti particles */
+.confetti-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  animation: confetti-fall 1.5s ease-out forwards;
+}
+
+/* Neon text glow */
+.neon-text {
+  text-shadow: 0 0 10px hsl(var(--primary) / 0.5), 0 0 20px hsl(var(--primary) / 0.3);
+}
+
+/* Sidebar collapsed responsive margin */
+body.sidebar-collapsed .sidebar-collapsed\:ml-16 {
+  margin-left: 4rem !important;
+}
+
+@media (max-width: 767px) {
+  .ml-60 {
+    margin-left: 0 !important;
+  }
+  body.sidebar-collapsed .sidebar-collapsed\:ml-16 {
+    margin-left: 0 !important;
+  }
+}
+
+/* Fix autofill background in dark mode */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px hsl(var(--card)) inset !important;
+  -webkit-text-fill-color: hsl(var(--foreground)) !important;
+  box-shadow: 0 0 0 1000px hsl(var(--card)) inset !important;
+  caret-color: hsl(var(--foreground)) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Touch-friendly */
+.snap-x > * {
+  scroll-snap-align: start;
+}
+
+.touch-manipulation {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
