@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { LayoutDashboard, User, LogOut, List, ChevronDown, ChevronRight, Stethoscope, Briefcase, Heart, DollarSign, Crown, Lock, PanelLeftClose, PanelLeft, Menu, Calendar, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, User, LogOut, List, ChevronDown, ChevronRight, Stethoscope, Briefcase, Heart, DollarSign, Crown, Lock, PanelLeftClose, PanelLeft, Menu, Calendar, Sun, Moon, Archive } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SECTORS, Sector } from "@/lib/mock-data";
 import medworkLogo from "@/assets/medwork-logo.png";
@@ -254,18 +254,32 @@ export const AppSidebar = () => {
                       Projetos
                     </Link>
                     {id === "tecnico" && (
-                      <Link
-                        to="/calendario/tecnico"
-                        className={cn(
-                          "flex items-center gap-2 px-2.5 py-1.5 rounded-[8px] text-xs transition-all duration-300",
-                          isActive("/calendario/tecnico")
-                            ? `font-medium ${neon.active} ${neon.text}`
-                            : `text-muted-foreground ${neon.hover} hover:text-foreground`
-                        )}
-                      >
-                        <Calendar className="w-3.5 h-3.5 stroke-[1.5]" />
-                        Calendário
-                      </Link>
+                      <>
+                        <Link
+                          to="/calendario/tecnico"
+                          className={cn(
+                            "flex items-center gap-2 px-2.5 py-1.5 rounded-[8px] text-xs transition-all duration-300",
+                            isActive("/calendario/tecnico")
+                              ? `font-medium ${neon.active} ${neon.text}`
+                              : `text-muted-foreground ${neon.hover} hover:text-foreground`
+                          )}
+                        >
+                          <Calendar className="w-3.5 h-3.5 stroke-[1.5]" />
+                          Calendário
+                        </Link>
+                        <Link
+                          to="/arquivados/tecnico"
+                          className={cn(
+                            "flex items-center gap-2 px-2.5 py-1.5 rounded-[8px] text-xs transition-all duration-300",
+                            isActive("/arquivados/tecnico")
+                              ? `font-medium ${neon.active} ${neon.text}`
+                              : `text-muted-foreground ${neon.hover} hover:text-foreground`
+                          )}
+                        >
+                          <Archive className="w-3.5 h-3.5 stroke-[1.5]" />
+                          Arquivados
+                        </Link>
+                      </>
                     )}
                   </div>
                 )}

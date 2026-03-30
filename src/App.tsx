@@ -13,6 +13,7 @@ import ProjectDetail from "./pages/ProjectDetail.tsx";
 import ProjectList from "./pages/ProjectList.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import CalendarioTecnico from "./pages/CalendarioTecnico.tsx";
+import Arquivados from "./pages/Arquivados.tsx";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/projeto/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/calendario/tecnico" element={<ProtectedRoute><CalendarioTecnico /></ProtectedRoute>} />
+              <Route path="/arquivados/tecnico" element={<ProtectedRoute><Arquivados /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </ProjectProvider>

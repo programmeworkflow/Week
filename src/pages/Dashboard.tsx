@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Project, Sector, TecnicoProject, KanbanVariavelCard, RenovacaoCard, RenovacaoStatus, ProjectAttachment, TECNICO_RESPONSAVEIS, TECNICO_PRIORIDADES, TECNICO_STATUS_OPTIONS } from "@/lib/mock-data";
 import { getBoardTitle } from "@/lib/sectors";
 import { cn } from "@/lib/utils";
-import { Download, RefreshCw, Crown, Filter, Copy, ArrowRightLeft, Plus, Layers, PinOff, Edit2, Trash2, X, Send, Mic, Square, Play, Pause, Paperclip } from "lucide-react";
+import { Download, RefreshCw, Crown, Filter, Copy, ArrowRightLeft, Plus, Layers, PinOff, Edit2, Trash2, X, Send, Mic, Square, Play, Pause, Paperclip, Archive } from "lucide-react";
 import { AchievementToast } from "@/components/AchievementToast";
 import { FileAttachmentButton, FileAttachmentList } from "@/components/FileAttachment";
 import { format } from "date-fns";
@@ -359,9 +359,29 @@ const Dashboard = () => {
     ? sectorProjects
     : sectorProjects.filter((p) => p.responsible_ids.includes(filter));
 
-  const mainProjects = filtered.filter((p) => !p.is_renovation);
-  const renovationProjects = filtered.filter((p) => p.is_renovation);
-  const variavelProjects = isTecnico ? getVariavelProjects() : [];
+  const mainProjects = filtered.filter((p) => !p.is_renovation && p.status !== "archived");
+  const renovationProjects = filtered.filter((p) => p.is_renovation && p.status !== "archived");
+  const variavelProjects = isTecnico ? getVariavelProjects().filter((p: any) => p.status !== "archived") : [];
+
+  // Auto-archive: tecnico projects in "done"/"Finalizada" for 3+ days
+  useEffect(() => {
+    if (!isTecnico) return;
+    const now = Date.now();
+    const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
+
+    // Check tecnico projects with status "done" and archived_at timestamp
+    tecnicoProjects.forEach((tp) => {
+      if (tp.status_tecnico === "Finalizada" && !((tp as any).archived_at)) {
+        // Set archived_at timestamp if not set
+        updateTecnicoProject(tp.id, { archived_at: new Date().toISOString() } as any);
+      } else if (tp.status_tecnico === "Finalizada" && (tp as any).archived_at) {
+        const archivedTime = new Date((tp as any).archived_at).getTime();
+        if (now - archivedTime >= THREE_DAYS) {
+          updateTecnicoProject(tp.id, { status_tecnico: "Arquivado" } as any);
+        }
+      }
+    });
+  }, [isTecnico, tecnicoProjects.length]);
 
   const getColumnsForSector = () => {
     if (isTecnico) return tecnicoColumns;
@@ -421,6 +441,14 @@ const Dashboard = () => {
 
   const handleVariavelCardClick = (project: Project) => {
     navigate(`/projeto/${project.id}?type=variavel`);
+  };
+
+  const handleArchiveTecnico = (id: string) => {
+    updateTecnicoProject(id, { status_tecnico: "Arquivado" } as any);
+  };
+
+  const handleArchiveVariavel = (id: string) => {
+    updateKanbanVariavelStatus(id, "archived");
   };
 
   const handleRenovacaoDrop = (cardId: string, newStatus: Project["status"]) => {
@@ -626,7 +654,16 @@ const Dashboard = () => {
                           extraClass={variavelColumnColors[col.status] || ""}
                           maxCards={MAX_CARDS_VARIAVEIS}
                           onViewAll={handleViewAll}
-
+                          renderCardExtra={(project) => (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => { e.stopPropagation(); handleArchiveVariavel(project.id); }}
+                              className="h-6 text-[10px] gap-1 text-muted-foreground hover:text-orange-400 mt-1 px-2"
+                            >
+                              <Archive className="w-3 h-3" /> Arquivar
+                            </Button>
+                          )}
                         />
                       );
                     })}
@@ -661,7 +698,16 @@ const Dashboard = () => {
                     extraClass={isTecnico ? tecnicoColumnColors[col.status] || "" : ""}
                     maxCards={MAX_CARDS_FIXOS}
                     onViewAll={handleViewAll}
-                    
+                    renderCardExtra={isTecnico ? (project) => (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); handleArchiveTecnico(project.id); }}
+                        className="h-6 text-[10px] gap-1 text-muted-foreground hover:text-orange-400 mt-1 px-2"
+                      >
+                        <Archive className="w-3 h-3" /> Arquivar
+                      </Button>
+                    ) : undefined}
                   />
                 );
               })}
@@ -676,18 +722,6 @@ const Dashboard = () => {
                   </div>
                   <h2 className="text-[15px] font-semibold text-foreground">Renovação</h2>
                   <span className="text-[10px] text-muted-foreground">(renovações e pendências)</span>
-                  <Button variant="outline" size="sm" onClick={() => {
-                    addRenovacaoCard({
-                      title: "Nova renovação",
-                      description: "",
-                      status: "doc_vencidos",
-                      empresa: "Nova renovação",
-                      prioridade: "Baixa",
-                      createdAt: new Date().toISOString(),
-                    });
-                  }} className="ml-auto gap-1.5 text-xs rounded-lg h-8 btn-3d neon-hover animate-float">
-                    <Plus className="w-3.5 h-3.5" /> Novo card
-                  </Button>
                 </div>
                 <div className={`bg-card rounded-[12px] border p-5 neon-card shadow-[0_0_15px_rgba(251,146,60,0.15)] border-orange-400/20`}>
                   <div className="flex gap-5 overflow-x-auto pb-2 snap-x snap-mandatory md:snap-none">

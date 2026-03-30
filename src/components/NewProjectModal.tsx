@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Layers, PinOff } from "lucide-react";
+import { Plus, Layers, PinOff, RefreshCw } from "lucide-react";
 import { SECTORS, Sector } from "@/lib/mock-data";
 
 // CNPJ mask: 00.000.000/0000-00
@@ -24,9 +24,9 @@ interface NewProjectModalProps {
 }
 
 export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
-  const { addProject, addKanbanVariavelCard, users } = useProjects();
+  const { addProject, addKanbanVariavelCard, addRenovacaoCard, users } = useProjects();
   const [open, setOpen] = useState(false);
-  const [quadroTipo, setQuadroTipo] = useState<"fixo" | "variavel">("fixo");
+  const [quadroTipo, setQuadroTipo] = useState<"fixo" | "variavel" | "renovacao">("fixo");
   const [form, setForm] = useState({
     project_name: "",
     description: "",
@@ -64,6 +64,22 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
         contato_telefone: form.contato_telefone,
         contato_email: form.contato_email,
         dados_extras: form.dados_extras,
+      });
+    } else if (isTecnico && quadroTipo === "renovacao") {
+      addRenovacaoCard({
+        title: form.project_name,
+        description: form.description,
+        status: "doc_vencidos",
+        empresa: form.project_name,
+        cnpj: form.cnpj,
+        responsavel: users.find((u) => form.responsible_ids[0] === u.id)?.full_name || "",
+        prioridade: form.prioridade,
+        data: form.due_date ? new Date(form.due_date).toLocaleDateString("pt-BR") : "",
+        contato_nome: form.contato_nome,
+        contato_telefone: form.contato_telefone,
+        contato_email: form.contato_email,
+        dados_extras: form.dados_extras,
+        createdAt: new Date().toISOString(),
       });
     } else {
       addProject({
@@ -150,7 +166,7 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
           {isTecnico && (
             <div className="space-y-2 animate-fade-in">
               <Label>Tipo de Quadro</Label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setQuadroTipo("fixo")}
@@ -182,7 +198,24 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
                   </div>
                   <div>
                     <span className={`text-sm font-medium block ${quadroTipo === "variavel" ? "text-cyan-400" : "text-foreground"}`}>Demanda Avulsa</span>
-                    <span className="text-[10px] text-muted-foreground">Demandas avulsas independentes</span>
+                    <span className="text-[10px] text-muted-foreground">Demandas avulsas</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuadroTipo("renovacao")}
+                  className={`flex items-center gap-2.5 p-3 rounded-xl border-2 transition-all duration-300 text-left ${
+                    quadroTipo === "renovacao"
+                      ? "border-orange-400 bg-orange-400/10 shadow-[0_0_12px_rgba(251,146,60,0.3)]"
+                      : "border-border hover:border-orange-400/30 hover:bg-muted/50"
+                  }`}
+                >
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${quadroTipo === "renovacao" ? "bg-orange-400/20" : "bg-muted"}`}>
+                    <RefreshCw className={`w-4 h-4 ${quadroTipo === "renovacao" ? "text-orange-400" : "text-muted-foreground"}`} />
+                  </div>
+                  <div>
+                    <span className={`text-sm font-medium block ${quadroTipo === "renovacao" ? "text-orange-400" : "text-foreground"}`}>Renovação</span>
+                    <span className="text-[10px] text-muted-foreground">Renovações e pendências</span>
                   </div>
                 </button>
               </div>
@@ -275,7 +308,7 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
           </div>
 
           <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-[10px] font-medium h-10 transition-all duration-200 btn-3d neon-hover">
-            {isTecnico && quadroTipo === "variavel" ? "Criar no Demanda Avulsa" : "Salvar Projeto"}
+            {isTecnico && quadroTipo === "variavel" ? "Criar em Demanda Avulsa" : isTecnico && quadroTipo === "renovacao" ? "Criar em Renovação" : "Salvar Projeto"}
           </Button>
         </form>
       </DialogContent>

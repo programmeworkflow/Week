@@ -62,7 +62,8 @@ export interface Project {
   cnpj?: string;
   start_date?: string;
   due_date: string;
-  status: "not_authenticated" | "not_started" | "pending" | "doc_pending" | "review" | "done";
+  status: "not_authenticated" | "not_started" | "pending" | "doc_pending" | "review" | "done" | "archived";
+  archived_at?: string;
   sector: Sector;
   is_renovation?: boolean;
   responsible_ids: string[];
