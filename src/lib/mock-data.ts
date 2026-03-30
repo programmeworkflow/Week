@@ -1,10 +1,11 @@
-export type Sector = "tecnico" | "comercial" | "saude" | "financeiro" | "diretoria";
+export type Sector = "tecnico" | "comercial" | "saude" | "financeiro" | "psicossocial" | "diretoria";
 
 export const SECTORS: { id: Sector; label: string }[] = [
   { id: "tecnico", label: "Setor Técnico" },
   { id: "comercial", label: "Comercial" },
   { id: "saude", label: "Saúde" },
   { id: "financeiro", label: "Financeiro" },
+  { id: "psicossocial", label: "Psicossocial" },
   { id: "diretoria", label: "Diretoria" },
 ];
 

@@ -5,6 +5,7 @@ export const sectorTitles: Record<Sector, string> = {
   comercial: "Comercial",
   saude: "Saúde",
   financeiro: "Financeiro",
+  psicossocial: "Psicossocial",
   diretoria: "Diretoria",
 };
 

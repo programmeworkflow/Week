@@ -1,7 +1,9 @@
 import { AppSidebar } from "@/components/AppSidebar";
 import { useProjects } from "@/contexts/ProjectContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
+import { getSectorTitle } from "@/lib/sectors";
+import { Sector } from "@/lib/mock-data";
 import { Archive, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -11,8 +13,11 @@ const Arquivados = () => {
   const { user, canAccessSector } = useAuth();
   const { tecnicoProjects, updateTecnicoProject, kanbanVariavelCards, updateKanbanVariavelStatus } = useProjects();
 
+  const { sector: sectorParam } = useParams<{ sector: string }>();
+  const currentSector = (sectorParam || "tecnico") as Sector;
+
   if (!user) return <Navigate to="/" replace />;
-  if (!canAccessSector("tecnico") && !user.is_admin) return <Navigate to="/dashboard/projects" replace />;
+  if (!canAccessSector(currentSector) && !user.is_admin) return <Navigate to="/dashboard/projects" replace />;
 
   // Archived tecnico projects (status_tecnico === "Arquivado")
   const archivedTecnico = tecnicoProjects.filter((tp) => (tp as any).status_tecnico === "Arquivado");
@@ -36,7 +41,7 @@ const Arquivados = () => {
           <div className="mb-6">
             <h1 className="text-xl font-semibold text-foreground neon-text flex items-center gap-2">
               <Archive className="w-5 h-5 text-orange-400" />
-              Arquivados — Setor Técnico
+              Arquivados — {getSectorTitle(currentSector)}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">Projetos e demandas arquivados</p>
           </div>

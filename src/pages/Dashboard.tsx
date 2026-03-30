@@ -87,11 +87,20 @@ const renovacaoColumnColors: Record<string, string> = {
   finalizada: "border-t-2 border-t-emerald-400 shadow-[0_-2px_10px_rgba(52,211,153,0.3)]",
 };
 
+const psicossocialColumns: { title: string; status: Project["status"] }[] = [
+  { title: "Não foi iniciado", status: "not_authenticated" },
+  { title: "Diagnóstico inicial", status: "not_started" },
+  { title: "Enviar proposta comercial", status: "pending" },
+  { title: "Dar devolutiva", status: "review" },
+  { title: "Finalizada", status: "done" },
+];
+
 const sectorNeonColors: Record<string, string> = {
   tecnico: "shadow-[0_0_15px_rgba(34,211,238,0.15)] border-cyan-400/20",
   comercial: "shadow-[0_0_15px_rgba(251,191,36,0.15)] border-amber-400/20",
   saude: "shadow-[0_0_15px_rgba(244,114,182,0.15)] border-pink-400/20",
   financeiro: "shadow-[0_0_15px_rgba(52,211,153,0.15)] border-emerald-400/20",
+  psicossocial: "shadow-[0_0_15px_rgba(168,85,247,0.15)] border-purple-400/20",
   diretoria: "shadow-[0_0_15px_rgba(167,139,250,0.15)] border-violet-400/20",
 };
 
@@ -293,6 +302,7 @@ const Dashboard = () => {
   const isGeneralDashboard = !sector;
   const isDiretoria = sector === "diretoria";
   const isTecnico = sector === "tecnico";
+  const isPsicossocial = sector === "psicossocial";
 
   if (sector && !canAccessSector(sector as Sector)) {
     return <Navigate to="/dashboard/projects" replace />;
@@ -385,6 +395,7 @@ const Dashboard = () => {
 
   const getColumnsForSector = () => {
     if (isTecnico) return tecnicoColumns;
+    if (isPsicossocial) return psicossocialColumns;
     if (isDiretoria) return diretoriaColumns;
     return mainColumns;
   };

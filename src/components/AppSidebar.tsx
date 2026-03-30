@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { LayoutDashboard, User, LogOut, List, ChevronDown, ChevronRight, Stethoscope, Briefcase, Heart, DollarSign, Crown, Lock, PanelLeftClose, PanelLeft, Menu, Calendar, Sun, Moon, Archive } from "lucide-react";
+import { LayoutDashboard, User, LogOut, List, ChevronDown, ChevronRight, Stethoscope, Briefcase, Heart, DollarSign, Crown, Lock, PanelLeftClose, PanelLeft, Menu, Calendar, Sun, Moon, Archive, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SECTORS, Sector } from "@/lib/mock-data";
 import medworkLogo from "@/assets/medwork-logo.png";
@@ -12,6 +12,7 @@ const sectorIcons: Record<Sector, React.ElementType> = {
   comercial: Briefcase,
   saude: Heart,
   financeiro: DollarSign,
+  psicossocial: Brain,
   diretoria: Crown,
 };
 
@@ -39,6 +40,12 @@ const sectorNeonStyles: Record<Sector, { active: string; hover: string; border: 
     hover: "hover:shadow-[0_0_10px_rgba(52,211,153,0.25)] hover:bg-emerald-400/5",
     border: "border-l-emerald-400",
     text: "text-emerald-400",
+  },
+  psicossocial: {
+    active: "shadow-[0_0_12px_rgba(168,85,247,0.4)] bg-purple-400/10",
+    hover: "hover:shadow-[0_0_10px_rgba(168,85,247,0.25)] hover:bg-purple-400/5",
+    border: "border-l-purple-400",
+    text: "text-purple-400",
   },
   diretoria: {
     active: "shadow-[0_0_12px_rgba(167,139,250,0.4)] bg-violet-400/10",
@@ -253,13 +260,13 @@ export const AppSidebar = () => {
                       <List className="w-3.5 h-3.5 stroke-[1.5]" />
                       Projetos
                     </Link>
-                    {id === "tecnico" && (
+                    {(id === "tecnico" || id === "psicossocial") && (
                       <>
                         <Link
-                          to="/calendario/tecnico"
+                          to={`/calendario/${id}`}
                           className={cn(
                             "flex items-center gap-2 px-2.5 py-1.5 rounded-[8px] text-xs transition-all duration-300",
-                            isActive("/calendario/tecnico")
+                            isActive(`/calendario/${id}`)
                               ? `font-medium ${neon.active} ${neon.text}`
                               : `text-muted-foreground ${neon.hover} hover:text-foreground`
                           )}
@@ -268,10 +275,10 @@ export const AppSidebar = () => {
                           Calendário
                         </Link>
                         <Link
-                          to="/arquivados/tecnico"
+                          to={`/arquivados/${id}`}
                           className={cn(
                             "flex items-center gap-2 px-2.5 py-1.5 rounded-[8px] text-xs transition-all duration-300",
-                            isActive("/arquivados/tecnico")
+                            isActive(`/arquivados/${id}`)
                               ? `font-medium ${neon.active} ${neon.text}`
                               : `text-muted-foreground ${neon.hover} hover:text-foreground`
                           )}

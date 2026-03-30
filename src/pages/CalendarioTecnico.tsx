@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
+import { getSectorTitle } from "@/lib/sectors";
+import { Sector } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { Plus, ChevronLeft, ChevronRight, Pencil, Trash2, X, Calendar as CalendarIcon, Car, Monitor, User as UserIcon } from "lucide-react";
 import {
@@ -40,6 +42,8 @@ interface Compromisso {
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 const CalendarioTecnico = () => {
+  const { sector: sectorParam } = useParams<{ sector: string }>();
+  const currentSector = (sectorParam || "tecnico") as Sector;
   const { user, canAccessSector } = useAuth();
   const [baseMonth, setBaseMonth] = useState(new Date());
   const [compromissos, setCompromissos] = useState<Compromisso[]>([]);
@@ -60,7 +64,7 @@ const CalendarioTecnico = () => {
   });
 
   if (!user) return <Navigate to="/" replace />;
-  if (!canAccessSector("tecnico") && !user.is_admin) return <Navigate to="/dashboard/projects" replace />;
+  if (!canAccessSector(currentSector) && !user.is_admin) return <Navigate to="/dashboard/projects" replace />;
 
   const resetForm = () => {
     setFormData({ data: "", horaInicio: "", horaFim: "", usarCarro: false, tipoCarro: "", usarDataShow: false, tipo: "" });
@@ -211,7 +215,7 @@ const CalendarioTecnico = () => {
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-xl font-semibold text-foreground neon-text">Calendário — Setor Técnico</h1>
+              <h1 className="text-xl font-semibold text-foreground neon-text">Calendário — {getSectorTitle(currentSector)}</h1>
               <p className="text-sm text-muted-foreground mt-0.5">Gerencie treinamentos e visitas técnicas</p>
             </div>
             <div className="flex items-center gap-2">
