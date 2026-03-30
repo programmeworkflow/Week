@@ -84,7 +84,26 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     const created_at = new Date().toISOString();
     const newProject = { ...project, id, created_at };
     setProjects((prev) => [...prev, newProject as Project]);
-    await supabase.from("medwork_projects").insert({ ...newProject, responsible_ids: (project as any).responsible_ids || [] });
+    const dbRow = {
+      id,
+      company_id: (project as any).company_id || "1",
+      project_name: (project as any).project_name || "",
+      description: (project as any).description || "",
+      cnpj: (project as any).cnpj || "",
+      due_date: (project as any).due_date || "",
+      start_date: (project as any).start_date || "",
+      status: (project as any).status || "not_authenticated",
+      sector: (project as any).sector || "tecnico",
+      responsible_ids: (project as any).responsible_ids || [],
+      created_at,
+      is_renovation: (project as any).is_renovation || false,
+      contato_nome: (project as any).contato_nome || "",
+      contato_telefone: (project as any).contato_telefone || "",
+      contato_email: (project as any).contato_email || "",
+      dados_extras: (project as any).dados_extras || "",
+    };
+    const { error } = await supabase.from("medwork_projects").insert(dbRow);
+    if (error) console.error("addProject error:", error);
   };
 
   const updateProject = async (id: string, data: Partial<Omit<Project, "id">>) => {
