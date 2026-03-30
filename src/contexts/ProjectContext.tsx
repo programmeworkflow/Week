@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, ReactNode } from "react";
-import { Project, User, ProjectMessage, ProjectAttachment, Sector, TecnicoProject, KanbanVariavelCard, mockProjects, mockUsers, mockMessages, mockTecnicoProjects, mockKanbanVariavelCards } from "@/lib/mock-data";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { Project, User, ProjectMessage, ProjectAttachment, Sector, TecnicoProject, KanbanVariavelCard } from "@/lib/mock-data";
+import { supabase } from "@/lib/supabase";
 
 interface ProjectContextType {
   projects: Project[];
@@ -22,13 +23,11 @@ interface ProjectContextType {
   addTecnicoProject: (project: Omit<TecnicoProject, "id">) => void;
   updateTecnicoProject: (id: string, data: Partial<Omit<TecnicoProject, "id">>) => void;
   deleteTecnicoProject: (id: string) => void;
-  // Attachments
   addProjectAttachment: (projectId: string, attachment: Omit<ProjectAttachment, "id">) => void;
   removeProjectAttachment: (projectId: string, attachmentId: string) => void;
   addTecnicoAttachment: (projectId: string, attachment: Omit<ProjectAttachment, "id">) => void;
   removeTecnicoAttachment: (projectId: string, attachmentId: string) => void;
   addMessageAttachment: (messageContent: Omit<ProjectMessage, "id" | "criado_em">) => void;
-  // Kanban Variáveis
   addKanbanVariavelCard: (card: Omit<KanbanVariavelCard, "id">) => void;
   updateKanbanVariavelCard: (id: string, data: Partial<Omit<KanbanVariavelCard, "id">>) => void;
   deleteKanbanVariavelCard: (id: string) => void;
@@ -45,49 +44,81 @@ export const useProjects = () => {
 };
 
 export const ProjectProvider = ({ children }: { children: ReactNode }) => {
-  const [projects, setProjects] = useState<Project[]>(mockProjects);
-  const [users, setUsers] = useState<User[]>(() => {
-    try {
-      const saved = localStorage.getItem("medwork-users");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return mockUsers;
-  });
-  const [messages, setMessages] = useState<ProjectMessage[]>(mockMessages);
-  const [tecnicoProjects, setTecnicoProjects] = useState<TecnicoProject[]>(mockTecnicoProjects);
-  const [kanbanVariavelCards, setKanbanVariavelCards] = useState<KanbanVariavelCard[]>(mockKanbanVariavelCards);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [messages, setMessages] = useState<ProjectMessage[]>([]);
+  const [tecnicoProjects, setTecnicoProjects] = useState<TecnicoProject[]>([]);
+  const [kanbanVariavelCards, setKanbanVariavelCards] = useState<KanbanVariavelCard[]>([]);
 
-  const addProject = (project: Omit<Project, "id" | "created_at">) => {
-    setProjects((prev) => [...prev, { ...project, id: String(Date.now()), created_at: new Date().toISOString() }]);
+  // Fetch all data from Supabase on mount
+  useEffect(() => {
+    const load = async () => {
+      const [usersRes, projRes, tecRes, kvRes, msgRes] = await Promise.all([
+        supabase.from("medwork_users").select("*"),
+        supabase.from("medwork_projects").select("*"),
+        supabase.from("medwork_tecnico_projects").select("*"),
+        supabase.from("medwork_kanban_variavel").select("*"),
+        supabase.from("medwork_messages").select("*"),
+      ]);
+      if (usersRes.data) setUsers(usersRes.data.map((u: any) => ({ ...u, sectors: u.sectors || [] })));
+      if (projRes.data) setProjects(projRes.data.map((p: any) => ({ ...p, responsible_ids: p.responsible_ids || [] })));
+      if (tecRes.data) setTecnicoProjects(tecRes.data);
+      if (kvRes.data) setKanbanVariavelCards(kvRes.data.map((k: any) => ({ ...k, createdAt: k.created_at || k.createdAt || "" })));
+      if (msgRes.data) setMessages(msgRes.data.map((m: any) => ({ ...m, criado_em: m.criado_em || "" })));
+    };
+    load();
+  }, []);
+
+  // --- Projects ---
+  const addProject = async (project: Omit<Project, "id" | "created_at">) => {
+    const id = String(Date.now());
+    const created_at = new Date().toISOString();
+    const newProject = { ...project, id, created_at };
+    setProjects((prev) => [...prev, newProject as Project]);
+    await supabase.from("medwork_projects").insert({ ...newProject, responsible_ids: (project as any).responsible_ids || [] });
   };
 
-  const updateProject = (id: string, data: Partial<Omit<Project, "id">>) => {
+  const updateProject = async (id: string, data: Partial<Omit<Project, "id">>) => {
     setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)));
+    await supabase.from("medwork_projects").update(data).eq("id", id);
   };
 
-  const updateProjectStatus = (id: string, status: Project["status"]) => {
+  const updateProjectStatus = async (id: string, status: Project["status"]) => {
     setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)));
+    await supabase.from("medwork_projects").update({ status }).eq("id", id);
   };
 
-  const deleteProject = (id: string) => {
+  const deleteProject = async (id: string) => {
     setProjects((prev) => prev.filter((p) => p.id !== id));
     setMessages((prev) => prev.filter((m) => m.projeto_id !== id));
+    await supabase.from("medwork_projects").delete().eq("id", id);
+    await supabase.from("medwork_messages").delete().eq("projeto_id", id);
   };
 
-  const addUser = (user: Omit<User, "id">) => {
-    setUsers((prev) => [...prev, { ...user, id: String(Date.now()) }]);
+  // --- Users (kept for backward compat, auth manages users primarily) ---
+  const addUser = async (user: Omit<User, "id">) => {
+    const id = String(Date.now());
+    setUsers((prev) => [...prev, { ...user, id }]);
+    await supabase.from("medwork_users").insert({ ...user, id });
   };
 
-  const updateUser = (id: string, data: Partial<Omit<User, "id">>) => {
+  const updateUser = async (id: string, data: Partial<Omit<User, "id">>) => {
     setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...data } : u)));
+    await supabase.from("medwork_users").update(data).eq("id", id);
   };
 
-  const deleteUser = (id: string) => {
+  const deleteUser = async (id: string) => {
     setUsers((prev) => prev.filter((u) => u.id !== id));
+    await supabase.from("medwork_users").delete().eq("id", id);
   };
 
-  const addMessage = (msg: Omit<ProjectMessage, "id" | "criado_em">) => {
-    setMessages((prev) => [...prev, { ...msg, id: String(Date.now()), criado_em: new Date().toISOString() }]);
+  // --- Messages ---
+  const addMessage = async (msg: Omit<ProjectMessage, "id" | "criado_em">) => {
+    const id = String(Date.now());
+    const criado_em = new Date().toISOString();
+    const newMsg = { ...msg, id, criado_em };
+    setMessages((prev) => [...prev, newMsg]);
+    await supabase.from("medwork_messages").insert(newMsg);
   };
 
   const getProjectMessages = (projectId: string) => {
@@ -98,19 +129,25 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   const getMedals = () => Math.floor(getPoints() / 300);
   const getProjectsBySector = (sector: Sector) => projects.filter((p) => p.sector === sector);
 
-  const addTecnicoProject = (project: Omit<TecnicoProject, "id">) => {
-    setTecnicoProjects((prev) => [...prev, { ...project, id: String(Date.now()) }]);
+  // --- Tecnico Projects ---
+  const addTecnicoProject = async (project: Omit<TecnicoProject, "id">) => {
+    const id = String(Date.now());
+    const newProject = { ...project, id };
+    setTecnicoProjects((prev) => [...prev, newProject as TecnicoProject]);
+    await supabase.from("medwork_tecnico_projects").insert(newProject);
   };
 
-  const updateTecnicoProject = (id: string, data: Partial<Omit<TecnicoProject, "id">>) => {
+  const updateTecnicoProject = async (id: string, data: Partial<Omit<TecnicoProject, "id">>) => {
     setTecnicoProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)));
+    await supabase.from("medwork_tecnico_projects").update(data).eq("id", id);
   };
 
-  const deleteTecnicoProject = (id: string) => {
+  const deleteTecnicoProject = async (id: string) => {
     setTecnicoProjects((prev) => prev.filter((p) => p.id !== id));
+    await supabase.from("medwork_tecnico_projects").delete().eq("id", id);
   };
 
-  // Attachments
+  // --- Attachments (local only for now, stored in project objects) ---
   const addProjectAttachment = (projectId: string, attachment: Omit<ProjectAttachment, "id">) => {
     const newAttachment = { ...attachment, id: String(Date.now()) };
     setProjects((prev) => prev.map((p) => p.id === projectId ? { ...p, attachments: [...(p.attachments || []), newAttachment] } : p));
@@ -129,31 +166,52 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     setTecnicoProjects((prev) => prev.map((p) => p.id === projectId ? { ...p, attachments: (p.attachments || []).filter(a => a.id !== attachmentId) } : p));
   };
 
-  const addMessageAttachment = (msg: Omit<ProjectMessage, "id" | "criado_em">) => {
-    setMessages((prev) => [...prev, { ...msg, id: String(Date.now()), criado_em: new Date().toISOString() }]);
+  const addMessageAttachment = async (msg: Omit<ProjectMessage, "id" | "criado_em">) => {
+    const id = String(Date.now());
+    const criado_em = new Date().toISOString();
+    const newMsg = { ...msg, id, criado_em };
+    setMessages((prev) => [...prev, newMsg]);
+    await supabase.from("medwork_messages").insert({ id, projeto_id: msg.projeto_id, usuario_id: msg.usuario_id, conteudo: msg.conteudo, criado_em });
   };
 
-  // Kanban Variáveis
-  const addKanbanVariavelCard = (card: Omit<KanbanVariavelCard, "id">) => {
-    setKanbanVariavelCards((prev) => [...prev, { ...card, id: String(Date.now()) }]);
+  // --- Kanban Variáveis ---
+  const addKanbanVariavelCard = async (card: Omit<KanbanVariavelCard, "id">) => {
+    const id = String(Date.now());
+    const newCard = { ...card, id };
+    setKanbanVariavelCards((prev) => [...prev, newCard as KanbanVariavelCard]);
+    await supabase.from("medwork_kanban_variavel").insert({
+      id, title: card.title, description: card.description || "", status: card.status,
+      prioridade: card.prioridade, created_at: card.createdAt || new Date().toISOString(),
+      empresa: (card as any).empresa || "", cnpj: (card as any).cnpj || "",
+      responsavel: (card as any).responsavel || "", regiao: (card as any).regiao || "",
+      data: (card as any).data || "", status_tecnico: (card as any).status_tecnico || "",
+      contato_nome: (card as any).contato_nome || "", contato_telefone: (card as any).contato_telefone || "",
+      contato_email: (card as any).contato_email || "", dados_extras: (card as any).dados_extras || "",
+    });
   };
 
-  const updateKanbanVariavelCard = (id: string, data: Partial<Omit<KanbanVariavelCard, "id">>) => {
+  const updateKanbanVariavelCard = async (id: string, data: Partial<Omit<KanbanVariavelCard, "id">>) => {
     setKanbanVariavelCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...data } : c)));
+    const dbData: any = { ...data };
+    if (dbData.createdAt) { dbData.created_at = dbData.createdAt; delete dbData.createdAt; }
+    await supabase.from("medwork_kanban_variavel").update(dbData).eq("id", id);
   };
 
-  const deleteKanbanVariavelCard = (id: string) => {
+  const deleteKanbanVariavelCard = async (id: string) => {
     setKanbanVariavelCards((prev) => prev.filter((c) => c.id !== id));
+    await supabase.from("medwork_kanban_variavel").delete().eq("id", id);
   };
 
-  const updateKanbanVariavelStatus = (id: string, status: Project["status"]) => {
+  const updateKanbanVariavelStatus = async (id: string, status: Project["status"]) => {
     setKanbanVariavelCards((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c)));
+    await supabase.from("medwork_kanban_variavel").update({ status }).eq("id", id);
   };
 
-  const transferTecnicoToSector = (tecnicoId: string, newSector: Sector, description: string, userId: string) => {
+  // --- Transfer ---
+  const transferTecnicoToSector = async (tecnicoId: string, newSector: Sector, description: string, userId: string) => {
     const tp = tecnicoProjects.find(t => t.id === tecnicoId);
     if (!tp) return;
-    
+
     const statusMap: Record<string, Project["status"]> = {
       "Não cadastradas no ESO": "not_authenticated",
       "Não iniciadas": "not_started",
@@ -163,8 +221,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       "Finalizada": "done",
     };
 
-    // Create new project in target sector, keeping the same ID so messages follow
-    const newProject: Project = {
+    const newProject: any = {
       id: tp.id,
       company_id: "1",
       project_name: tp.empresa,
@@ -175,27 +232,25 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       sector: newSector,
       responsible_ids: [],
       created_at: new Date().toISOString(),
-      attachments: tp.attachments,
-      contato_nome: tp.contato_nome,
-      contato_telefone: tp.contato_telefone,
-      contato_email: tp.contato_email,
-      dados_extras: tp.dados_extras,
-    } as any;
+    };
 
     setProjects(prev => [...prev, newProject]);
-    
-    // Add transfer message - messages already linked by projeto_id which stays the same
+    await supabase.from("medwork_projects").insert(newProject);
+
     const sectorLabel = ({ tecnico: "Setor Técnico", comercial: "Comercial", saude: "Saúde", financeiro: "Financeiro", diretoria: "Diretoria" } as Record<string, string>)[newSector] || newSector;
-    setMessages(prev => [...prev, {
-      id: String(Date.now()),
+    const msgId = String(Date.now());
+    const msg = {
+      id: msgId,
       projeto_id: tp.id,
       usuario_id: userId,
       conteudo: `📦 Projeto transferido de Setor Técnico para ${sectorLabel}. Motivo: ${description}`,
       criado_em: new Date().toISOString(),
-    }]);
+    };
+    setMessages(prev => [...prev, msg]);
+    await supabase.from("medwork_messages").insert(msg);
 
-    // Remove from técnico
     setTecnicoProjects(prev => prev.filter(t => t.id !== tecnicoId));
+    await supabase.from("medwork_tecnico_projects").delete().eq("id", tecnicoId);
   };
 
   return (

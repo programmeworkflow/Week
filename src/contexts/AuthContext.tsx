@@ -1,39 +1,21 @@
-import { createContext, useContext, useState, ReactNode, useCallback } from "react";
-import { User, mockUsers, Sector } from "@/lib/mock-data";
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
+import { User, Sector } from "@/lib/mock-data";
+import { supabase } from "@/lib/supabase";
 
-const USERS_STORAGE_KEY = "medwork-users";
 const SESSION_KEY = "medwork-session";
-
-const loadUsers = (): User[] => {
-  try {
-    const saved = localStorage.getItem(USERS_STORAGE_KEY);
-    if (saved) return JSON.parse(saved);
-  } catch {}
-  return mockUsers;
-};
-
-const saveUsers = (users: User[]) => {
-  try { localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users)); } catch {}
-};
-
-const loadSession = (users: User[]): User | null => {
-  try {
-    const id = localStorage.getItem(SESSION_KEY);
-    if (id) return users.find((u) => u.id === id) || null;
-  } catch {}
-  return null;
-};
 
 interface AuthContextType {
   user: User | null;
   allUsers: User[];
-  login: (email: string, password: string) => boolean;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   canAccessSector: (sector: Sector) => boolean;
-  updateProfile: (data: Partial<User>) => void;
-  addUser: (user: Omit<User, "id">) => void;
-  updateUser: (id: string, data: Partial<Omit<User, "id">>) => void;
-  deleteUser: (id: string) => void;
+  updateProfile: (data: Partial<User>) => Promise<void>;
+  addUser: (user: Omit<User, "id">) => Promise<void>;
+  updateUser: (id: string, data: Partial<Omit<User, "id">>) => Promise<void>;
+  deleteUser: (id: string) => Promise<void>;
+  refreshUsers: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -45,24 +27,50 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [users, setUsers] = useState<User[]>(loadUsers);
-  const [user, setUser] = useState<User | null>(() => loadSession(loadUsers()));
+  const [users, setUsers] = useState<User[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const persistUsers = useCallback((newUsers: User[]) => {
-    setUsers(newUsers);
-    saveUsers(newUsers);
+  const fetchUsers = useCallback(async () => {
+    const { data } = await supabase.from("medwork_users").select("*");
+    if (data) {
+      const mapped: User[] = data.map((u: any) => ({
+        id: u.id,
+        full_name: u.full_name,
+        cpf: u.cpf || "",
+        email: u.email,
+        password: u.password,
+        is_admin: u.is_admin || false,
+        company_id: u.company_id || "1",
+        sectors: u.sectors || [],
+      }));
+      setUsers(mapped);
+      return mapped;
+    }
+    return [];
   }, []);
 
-  const login = (email: string, password: string) => {
-    // Always read fresh from localStorage to catch newly created users
-    const freshUsers = loadUsers();
-    if (JSON.stringify(freshUsers) !== JSON.stringify(users)) {
-      setUsers(freshUsers);
-    }
+  // Load users and restore session on mount
+  useEffect(() => {
+    const init = async () => {
+      const allUsers = await fetchUsers();
+      const savedId = localStorage.getItem(SESSION_KEY);
+      if (savedId) {
+        const found = allUsers.find((u) => u.id === savedId);
+        if (found) setUser(found);
+      }
+      setLoading(false);
+    };
+    init();
+  }, [fetchUsers]);
+
+  const login = async (email: string, password: string) => {
+    // Refresh users from Supabase before login attempt
+    const freshUsers = await fetchUsers();
     const found = freshUsers.find((u) => u.email === email && u.password === password);
     if (found) {
       setUser(found);
-      try { localStorage.setItem(SESSION_KEY, found.id); } catch {}
+      localStorage.setItem(SESSION_KEY, found.id);
       return true;
     }
     return false;
@@ -70,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => {
     setUser(null);
-    try { localStorage.removeItem(SESSION_KEY); } catch {}
+    localStorage.removeItem(SESSION_KEY);
   };
 
   const canAccessSector = (sector: Sector) => {
@@ -79,35 +87,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return user.sectors.includes(sector);
   };
 
-  const updateProfile = (data: Partial<User>) => {
+  const updateProfile = async (data: Partial<User>) => {
+    if (!user) return;
+    const updates: any = {};
+    if (data.full_name !== undefined) updates.full_name = data.full_name;
+    if (data.email !== undefined) updates.email = data.email;
+    if (data.password !== undefined) updates.password = data.password;
+
+    await supabase.from("medwork_users").update(updates).eq("id", user.id);
     setUser((prev) => prev ? { ...prev, ...data } : prev);
-    if (user) {
-      const newUsers = users.map((u) => u.id === user.id ? { ...u, ...data } : u);
-      persistUsers(newUsers);
-    }
+    await fetchUsers();
   };
 
-  const addUser = (userData: Omit<User, "id">) => {
-    const newUser: User = { ...userData, id: String(Date.now()) };
-    const newUsers = [...users, newUser];
-    persistUsers(newUsers);
+  const addUser = async (userData: Omit<User, "id">) => {
+    const newId = String(Date.now());
+    await supabase.from("medwork_users").insert({
+      id: newId,
+      full_name: userData.full_name,
+      cpf: userData.cpf,
+      email: userData.email,
+      password: userData.password,
+      is_admin: userData.is_admin,
+      company_id: userData.company_id || "1",
+      sectors: userData.sectors,
+    });
+    await fetchUsers();
   };
 
-  const updateUser = (id: string, data: Partial<Omit<User, "id">>) => {
-    const newUsers = users.map((u) => u.id === id ? { ...u, ...data } : u);
-    persistUsers(newUsers);
+  const updateUser = async (id: string, data: Partial<Omit<User, "id">>) => {
+    await supabase.from("medwork_users").update(data).eq("id", id);
     if (user && user.id === id) {
       setUser((prev) => prev ? { ...prev, ...data } : prev);
     }
+    await fetchUsers();
   };
 
-  const deleteUser = (id: string) => {
-    const newUsers = users.filter((u) => u.id !== id);
-    persistUsers(newUsers);
+  const deleteUser = async (id: string) => {
+    await supabase.from("medwork_users").delete().eq("id", id);
+    await fetchUsers();
   };
+
+  const refreshUsers = fetchUsers;
 
   return (
-    <AuthContext.Provider value={{ user, allUsers: users, login, logout, canAccessSector, updateProfile, addUser, updateUser, deleteUser }}>
+    <AuthContext.Provider value={{ user, allUsers: users, loading, login, logout, canAccessSector, updateProfile, addUser, updateUser, deleteUser, refreshUsers }}>
       {children}
     </AuthContext.Provider>
   );
