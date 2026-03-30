@@ -445,7 +445,7 @@ const ProjectDetail = () => {
                           <Label>Responsável</Label>
                           <Select value={f.responsavel} onValueChange={(v) => setForm((p: any) => ({ ...p, responsavel: v }))}>
                             <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                            <SelectContent>{TECNICO_RESPONSAVEIS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                            <SelectContent>{[...users.map(u => u.full_name), "Zona de espera"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                           </Select>
                         </div>
                         <div className="space-y-2">
@@ -532,7 +532,7 @@ const ProjectDetail = () => {
                           <Label>Responsável</Label>
                           <Select value={f.responsavel} onValueChange={(v) => setForm((p: any) => ({ ...p, responsavel: v }))}>
                             <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                            <SelectContent>{TECNICO_RESPONSAVEIS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                            <SelectContent>{[...users.map(u => u.full_name), "Zona de espera"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                           </Select>
                         </div>
                         <div className="space-y-2">

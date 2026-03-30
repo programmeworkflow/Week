@@ -80,7 +80,7 @@ const isValidDate = (dateStr: string): boolean => {
 
 // Tecnico spreadsheet view
 const TecnicoSpreadsheet = () => {
-  const { tecnicoProjects, addTecnicoProject, updateTecnicoProject, deleteTecnicoProject } = useProjects();
+  const { tecnicoProjects, addTecnicoProject, updateTecnicoProject, deleteTecnicoProject, users } = useProjects();
   const [newRow, setNewRow] = useState<Omit<TecnicoProject, "id" | "sector"> | null>(null);
   const [editingProject, setEditingProject] = useState<TecnicoProject | null>(null);
   const [viewingProject, setViewingProject] = useState<TecnicoProject | null>(null);
@@ -190,7 +190,7 @@ const TecnicoSpreadsheet = () => {
                 <SelectTrigger className="h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  {TECNICO_RESPONSAVEIS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                  {[...users.map(u => u.full_name), "Zona de espera"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -433,7 +433,7 @@ const TecnicoSpreadsheet = () => {
                   <Label className="text-xs">Responsável</Label>
                   <Select value={editingProject.responsavel} onValueChange={(v) => setEditingProject({ ...editingProject, responsavel: v as any })}>
                     <SelectTrigger className="h-9 text-sm rounded-lg"><SelectValue /></SelectTrigger>
-                    <SelectContent>{TECNICO_RESPONSAVEIS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                    <SelectContent>{[...users.map(u => u.full_name), "Zona de espera"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1">

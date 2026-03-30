@@ -635,7 +635,7 @@ const Dashboard = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos</SelectItem>
-                      {TECNICO_RESPONSAVEIS.map((r) => (
+                      {[...users.map(u => u.full_name), "Zona de espera"].map((r) => (
                         <SelectItem key={r} value={r}>{r}</SelectItem>
                       ))}
                     </SelectContent>
@@ -927,7 +927,7 @@ const Dashboard = () => {
                         <Label className="text-xs">Responsável</Label>
                         <Select value={editingTecnico.responsavel} onValueChange={(v) => setEditingTecnico({ ...editingTecnico, responsavel: v as any })}>
                           <SelectTrigger className="h-9 text-sm rounded-lg"><SelectValue /></SelectTrigger>
-                          <SelectContent>{TECNICO_RESPONSAVEIS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                          <SelectContent>{[...users.map(u => u.full_name), "Zona de espera"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-1">

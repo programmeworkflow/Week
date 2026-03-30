@@ -70,7 +70,8 @@ export const ImportSpreadsheetModal = () => {
   const [rows, setRows] = useState<ImportedTecnicoRow[]>([]);
   const [fileName, setFileName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
-  const { addTecnicoProject } = useProjects();
+  const { addTecnicoProject, users } = useProjects();
+  const responsavelOptions = [...users.map(u => u.full_name), "Zona de espera"];
 
   const parseSpreadsheet = (file: File) => {
     const reader = new FileReader();
@@ -116,7 +117,7 @@ export const ImportSpreadsheetModal = () => {
             parsed.push({
               empresa,
               cnpj: rawCnpj ? formatCNPJ(rawCnpj) : "",
-              responsavel: matchOption(getCell("responsavel"), [...TECNICO_RESPONSAVEIS], "Zona de Espera"),
+              responsavel: matchOption(getCell("responsavel"), [...responsavelOptions], "Zona de Espera"),
               regiao: getCell("regiao"),
               prioridade: matchOption(getCell("prioridade"), [...TECNICO_PRIORIDADES], "Baixa"),
               data: getCell("data"),
@@ -140,7 +141,7 @@ export const ImportSpreadsheetModal = () => {
             parsed.push({
               empresa: cells[0] || "",
               cnpj: cells[1] ? formatCNPJ(cells[1]) : "",
-              responsavel: matchOption(cells[2] || "", [...TECNICO_RESPONSAVEIS], "Zona de Espera"),
+              responsavel: matchOption(cells[2] || "", [...responsavelOptions], "Zona de Espera"),
               regiao: cells[3] || "",
               prioridade: matchOption(cells[4] || "", [...TECNICO_PRIORIDADES], "Baixa"),
               data: cells[5] || "",
@@ -298,7 +299,7 @@ export const ImportSpreadsheetModal = () => {
                       <td className="px-2 py-1.5">
                         <Select value={r.responsavel} onValueChange={(v) => updateRow(i, { responsavel: v as TecnicoResponsavel })}>
                           <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>{TECNICO_RESPONSAVEIS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                          <SelectContent>{responsavelOptions.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
                         </Select>
                       </td>
                       <td className="px-2 py-1.5">
