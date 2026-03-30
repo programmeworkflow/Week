@@ -57,6 +57,9 @@ const Arquivados = () => {
                         <h4 className="text-sm font-medium text-foreground truncate">{tp.empresa}</h4>
                         <p className="text-xs text-muted-foreground mt-0.5">{tp.responsavel || "—"} • {tp.regiao || "—"}</p>
                         <p className="text-[11px] text-muted-foreground mt-1">{tp.data || "—"}</p>
+                        {(tp as any).archived_by && (
+                          <p className="text-[10px] text-orange-400 mt-1">Arquivado por: {(tp as any).archived_by}</p>
+                        )}
                       </div>
                       <Button
                         variant="ghost"
@@ -89,6 +92,9 @@ const Arquivados = () => {
                         <h4 className="text-sm font-medium text-foreground truncate">{c.title}</h4>
                         <p className="text-xs text-muted-foreground mt-0.5">{c.description || "—"}</p>
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-400/10 text-orange-400 font-medium mt-1 inline-block">Arquivado</span>
+                        {(c as any).archived_by && (
+                          <p className="text-[10px] text-orange-400 mt-1">Arquivado por: {(c as any).archived_by}</p>
+                        )}
                       </div>
                       <Button
                         variant="ghost"

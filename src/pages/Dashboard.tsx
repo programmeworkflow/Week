@@ -443,12 +443,24 @@ const Dashboard = () => {
     navigate(`/projeto/${project.id}?type=variavel`);
   };
 
-  const handleArchiveTecnico = (id: string) => {
-    updateTecnicoProject(id, { status_tecnico: "Arquivado" } as any);
+  const [archiveConfirm, setArchiveConfirm] = useState<{ id: string; name: string; type: "tecnico" | "variavel" } | null>(null);
+
+  const confirmArchiveTecnico = (id: string, name: string) => {
+    setArchiveConfirm({ id, name, type: "tecnico" });
   };
 
-  const handleArchiveVariavel = (id: string) => {
-    updateKanbanVariavelStatus(id, "archived");
+  const confirmArchiveVariavel = (id: string, name: string) => {
+    setArchiveConfirm({ id, name, type: "variavel" });
+  };
+
+  const handleArchiveConfirmed = () => {
+    if (!archiveConfirm || !user) return;
+    if (archiveConfirm.type === "tecnico") {
+      updateTecnicoProject(archiveConfirm.id, { status_tecnico: "Arquivado", archived_at: new Date().toISOString(), archived_by: user.full_name } as any);
+    } else {
+      updateKanbanVariavelCard(archiveConfirm.id, { status: "archived", archived_by: user.full_name } as any);
+    }
+    setArchiveConfirm(null);
   };
 
   const handleRenovacaoDrop = (cardId: string, newStatus: Project["status"]) => {
@@ -573,6 +585,30 @@ const Dashboard = () => {
     <div className="min-h-screen flex">
       <AppSidebar />
       <AchievementToast show={showAchievement} projectName={achievementName} onClose={() => setShowAchievement(false)} />
+
+      {/* Archive confirmation dialog */}
+      <Dialog open={!!archiveConfirm} onOpenChange={(v) => !v && setArchiveConfirm(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Archive className="w-5 h-5 text-orange-400" />
+              Arquivar projeto
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Tem certeza que deseja arquivar <strong className="text-foreground">"{archiveConfirm?.name}"</strong>?
+          </p>
+          <p className="text-xs text-muted-foreground">O projeto será removido do quadro mas continuará visível em Projetos.</p>
+          <div className="flex gap-2 pt-3">
+            <Button variant="outline" onClick={() => setArchiveConfirm(null)} className="flex-1 rounded-lg btn-3d neon-hover">
+              Cancelar
+            </Button>
+            <Button onClick={handleArchiveConfirmed} className="flex-1 rounded-lg bg-orange-500 text-white hover:bg-orange-600 btn-3d neon-hover">
+              <Archive className="w-4 h-4 mr-1.5" /> Arquivar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <main className="flex-1 ml-60 sidebar-collapsed:ml-16 p-6 md:p-8 bg-background transition-all duration-200">
         {/* Header */}
         <div className="flex items-center justify-between mb-8 animate-fade-in">
@@ -658,7 +694,7 @@ const Dashboard = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={(e) => { e.stopPropagation(); handleArchiveVariavel(project.id); }}
+                              onClick={(e) => { e.stopPropagation(); confirmArchiveVariavel(project.id, project.project_name); }}
                               className="h-6 text-[10px] gap-1 text-muted-foreground hover:text-orange-400 mt-1 px-2"
                             >
                               <Archive className="w-3 h-3" /> Arquivar
@@ -702,7 +738,7 @@ const Dashboard = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={(e) => { e.stopPropagation(); handleArchiveTecnico(project.id); }}
+                        onClick={(e) => { e.stopPropagation(); confirmArchiveTecnico(project.id, project.project_name); }}
                         className="h-6 text-[10px] gap-1 text-muted-foreground hover:text-orange-400 mt-1 px-2"
                       >
                         <Archive className="w-3 h-3" /> Arquivar

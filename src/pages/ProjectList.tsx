@@ -242,6 +242,7 @@ const TecnicoSpreadsheet = () => {
                 <th className="text-left text-[11px] font-bold text-foreground px-3 py-3 uppercase tracking-wider">Prioridade</th>
                 <th className="text-left text-[11px] font-bold text-foreground px-3 py-3 uppercase tracking-wider">Data</th>
                 <th className="text-left text-[11px] font-bold text-foreground px-3 py-3 uppercase tracking-wider">Status</th>
+                <th className="text-left text-[11px] font-bold text-foreground px-3 py-3 uppercase tracking-wider">Arquivado por</th>
                 <th className="text-center text-[11px] font-bold text-foreground px-3 py-3 uppercase tracking-wider w-24">Ações</th>
               </tr>
             </thead>
@@ -295,6 +296,9 @@ const TecnicoSpreadsheet = () => {
                       <SelectTrigger className={cn("h-8 text-[11px] rounded-lg border-0 font-medium", statusTecnicoColors[p.status_tecnico])}><SelectValue /></SelectTrigger>
                       <SelectContent>{TECNICO_STATUS_OPTIONS.map((r) => <SelectItem key={r} value={r}><span className={cn("px-1.5 py-0.5 rounded text-xs", statusTecnicoColors[r])}>{r}</span></SelectItem>)}</SelectContent>
                     </Select>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="text-xs text-muted-foreground">{(p as any).archived_by || "—"}</span>
                   </td>
                   <td className="px-3 py-2 text-center">
                     <div className="flex gap-1 justify-center">
