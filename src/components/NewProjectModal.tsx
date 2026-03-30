@@ -164,8 +164,8 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
                     <Layers className={`w-4 h-4 ${quadroTipo === "fixo" ? "text-primary" : "text-muted-foreground"}`} />
                   </div>
                   <div>
-                    <span className={`text-sm font-medium block ${quadroTipo === "fixo" ? "text-primary" : "text-foreground"}`}>Quadro Fixo</span>
-                    <span className="text-[10px] text-muted-foreground">Vinculado aos projetos</span>
+                    <span className={`text-sm font-medium block ${quadroTipo === "fixo" ? "text-primary" : "text-foreground"}`}>Empresas</span>
+                    <span className="text-[10px] text-muted-foreground">Clientes fixos da empresa</span>
                   </div>
                 </button>
                 <button
@@ -181,8 +181,8 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
                     <PinOff className={`w-4 h-4 ${quadroTipo === "variavel" ? "text-cyan-400" : "text-muted-foreground"}`} />
                   </div>
                   <div>
-                    <span className={`text-sm font-medium block ${quadroTipo === "variavel" ? "text-cyan-400" : "text-foreground"}`}>Quadro Variável</span>
-                    <span className="text-[10px] text-muted-foreground">Independente dos projetos</span>
+                    <span className={`text-sm font-medium block ${quadroTipo === "variavel" ? "text-cyan-400" : "text-foreground"}`}>Demanda Avulsa</span>
+                    <span className="text-[10px] text-muted-foreground">Demandas avulsas independentes</span>
                   </div>
                 </button>
               </div>
@@ -275,7 +275,7 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
           </div>
 
           <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-[10px] font-medium h-10 transition-all duration-200 btn-3d neon-hover">
-            {isTecnico && quadroTipo === "variavel" ? "Criar no Quadro Variável" : "Salvar Projeto"}
+            {isTecnico && quadroTipo === "variavel" ? "Criar no Demanda Avulsa" : "Salvar Projeto"}
           </Button>
         </form>
       </DialogContent>

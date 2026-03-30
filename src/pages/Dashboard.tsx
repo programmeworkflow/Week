@@ -34,7 +34,7 @@ const mainColumns: { title: string; status: Project["status"] }[] = [
 
 const tecnicoColumns: { title: string; status: Project["status"] }[] = [
   { title: "Não cadastradas no ESO", status: "not_authenticated" },
-  { title: "Não iniciadas", status: "not_started" },
+  { title: "Zona de espera", status: "not_started" },
   { title: "Visita pendente", status: "pending" },
   { title: "Documentação pendente", status: "doc_pending" },
   { title: "Revisão", status: "review" },
@@ -570,8 +570,8 @@ const Dashboard = () => {
                   <div className="w-7 h-7 rounded-[10px] bg-accent flex items-center justify-center">
                     <PinOff className="w-3.5 h-3.5 text-accent-foreground stroke-[1.5]" />
                   </div>
-                  <h2 className="text-[15px] font-semibold text-foreground">Quadro Variáveis</h2>
-                  <span className="text-[10px] text-muted-foreground">(independente dos projetos)</span>
+                  <h2 className="text-[15px] font-semibold text-foreground">Demanda Avulsa</h2>
+                  <span className="text-[10px] text-muted-foreground">(demandas avulsas independentes)</span>
                   <Button variant="outline" size="sm" onClick={() => setAddingVariavel(true)} className="ml-auto gap-1.5 text-xs rounded-lg h-8 btn-3d neon-hover animate-float">
                     <Plus className="w-3.5 h-3.5" /> Novo card
                   </Button>
@@ -607,8 +607,8 @@ const Dashboard = () => {
                 <div className="w-7 h-7 rounded-[10px] bg-primary/10 flex items-center justify-center">
                   <Layers className="w-3.5 h-3.5 text-primary stroke-[1.5]" />
                 </div>
-                <h2 className="text-[15px] font-semibold text-foreground">Quadro Fixos</h2>
-                <span className="text-[10px] text-muted-foreground">(vinculado aos projetos)</span>
+                <h2 className="text-[15px] font-semibold text-foreground">Empresas</h2>
+                <span className="text-[10px] text-muted-foreground">(clientes fixos da empresa)</span>
               </div>
             )}
 
