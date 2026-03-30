@@ -48,6 +48,7 @@ const statusTecnicoColors: Record<string, string> = {
   "Documentação pendente": "status-pendente",
   "Revisão": "status-revisao",
   "Finalizada": "status-concluido",
+  "Arquivado": "bg-orange-400/10 text-orange-400",
 };
 
 // CNPJ mask: 00.000.000/0000-00

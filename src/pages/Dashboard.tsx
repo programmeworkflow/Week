@@ -308,7 +308,7 @@ const Dashboard = () => {
       "Finalizada": "done",
     };
 
-    let filtered = tecnicoProjects;
+    let filtered = tecnicoProjects.filter(tp => tp.status_tecnico !== "Arquivado");
     if (tecnicoResponsavelFilter !== "all") {
       filtered = filtered.filter(tp => tp.responsavel === tecnicoResponsavelFilter);
     }

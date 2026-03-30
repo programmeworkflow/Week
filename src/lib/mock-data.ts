@@ -21,11 +21,11 @@ export interface User {
 
 export type TecnicoResponsavel = "Caio" | "Anielson" | "Pedro" | "Aline" | "Samuel" | "Fernando" | "Zona de Espera";
 export type TecnicoPrioridade = "Baixa" | "Média" | "Alta" | "Crítica";
-export type TecnicoStatus = "Não cadastradas no ESO" | "Não iniciadas" | "Visita pendente" | "Documentação pendente" | "Revisão" | "Finalizada";
+export type TecnicoStatus = "Não cadastradas no ESO" | "Não iniciadas" | "Visita pendente" | "Documentação pendente" | "Revisão" | "Finalizada" | "Arquivado";
 
 export const TECNICO_RESPONSAVEIS: TecnicoResponsavel[] = ["Caio", "Anielson", "Pedro", "Aline", "Samuel", "Fernando", "Zona de Espera"];
 export const TECNICO_PRIORIDADES: TecnicoPrioridade[] = ["Baixa", "Média", "Alta", "Crítica"];
-export const TECNICO_STATUS_OPTIONS: TecnicoStatus[] = ["Não cadastradas no ESO", "Não iniciadas", "Visita pendente", "Documentação pendente", "Revisão", "Finalizada"];
+export const TECNICO_STATUS_OPTIONS: TecnicoStatus[] = ["Não cadastradas no ESO", "Não iniciadas", "Visita pendente", "Documentação pendente", "Revisão", "Finalizada", "Arquivado"];
 
 export interface ProjectAttachment {
   id: string;
