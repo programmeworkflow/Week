@@ -35,7 +35,7 @@ interface Compromisso {
   usarCarro: boolean;
   tipoCarro?: "mobi" | "alugado";
   usarDataShow: boolean;
-  tipo: "treinamento" | "visita";
+  tipo: "treinamento" | "visita" | "reuniao" | "compromisso";
   criadoPor: string;
 }
 
@@ -52,6 +52,8 @@ const CalendarioTecnico = () => {
   const [selectedEvent, setSelectedEvent] = useState<Compromisso | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
+  const isTecnico = currentSector === "tecnico";
+
   // Form state
   const [formData, setFormData] = useState({
     data: "",
@@ -60,7 +62,7 @@ const CalendarioTecnico = () => {
     usarCarro: false,
     tipoCarro: "" as "" | "mobi" | "alugado",
     usarDataShow: false,
-    tipo: "" as "" | "treinamento" | "visita",
+    tipo: "" as "" | "treinamento" | "visita" | "reuniao" | "compromisso",
   });
 
   if (!user) return <Navigate to="/" replace />;
@@ -92,7 +94,7 @@ const CalendarioTecnico = () => {
   };
 
   const handleSave = () => {
-    if (!formData.data || !formData.horaInicio || !formData.horaFim || !formData.tipo) return;
+    if (!formData.data || !formData.horaInicio || !formData.tipo) return;
 
     const compromisso: Compromisso = {
       id: editingId || crypto.randomUUID(),
@@ -102,7 +104,7 @@ const CalendarioTecnico = () => {
       usarCarro: formData.usarCarro,
       tipoCarro: formData.usarCarro ? (formData.tipoCarro as "mobi" | "alugado") : undefined,
       usarDataShow: formData.usarDataShow,
-      tipo: formData.tipo as "treinamento" | "visita",
+      tipo: formData.tipo as any,
       criadoPor: user.full_name,
     };
 
@@ -125,6 +127,20 @@ const CalendarioTecnico = () => {
   const months = [subMonths(baseMonth, 1), baseMonth, addMonths(baseMonth, 1), addMonths(baseMonth, 2)];
 
   const getEventsForDay = (day: Date) => compromissos.filter((c) => isSameDay(c.data, day));
+
+  const getTipoColor = (tipo: string) => {
+    if (tipo === "reuniao") return "bg-red-500";
+    if (tipo === "compromisso") return "bg-purple-400";
+    if (tipo === "treinamento") return "bg-[hsl(var(--status-andamento-text))]";
+    return "bg-orange-500"; // visita
+  };
+
+  const getTipoLabel = (tipo: string) => {
+    if (tipo === "reuniao") return "Reunião";
+    if (tipo === "compromisso") return "Compromisso";
+    if (tipo === "treinamento") return "Treinamento";
+    return "Visita Técnica";
+  };
 
   const renderMonth = (monthDate: Date) => {
     const start = startOfWeek(startOfMonth(monthDate));
@@ -171,11 +187,11 @@ const CalendarioTecnico = () => {
                         <span
                           className={cn(
                             "w-1.5 h-1.5 rounded-full",
-                            ev.tipo === "treinamento" ? "bg-[hsl(var(--status-andamento-text))]" : "bg-orange-500"
+                            getTipoColor(ev.tipo)
                           )}
                         />
-                        {ev.usarCarro && <Car className="w-2.5 h-2.5 text-cyan-400" />}
-                        {ev.usarDataShow && <Monitor className="w-2.5 h-2.5 text-violet-400" />}
+                        {isTecnico && ev.usarCarro && <Car className="w-2.5 h-2.5 text-cyan-400" />}
+                        {isTecnico && ev.usarDataShow && <Monitor className="w-2.5 h-2.5 text-violet-400" />}
                       </div>
                     ))}
                   </div>
@@ -186,22 +202,37 @@ const CalendarioTecnico = () => {
         </div>
         {/* Legend */}
         <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-border">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[hsl(var(--status-andamento-text))]" />
-            <span className="text-[10px] text-muted-foreground">Treinamento</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-orange-500" />
-            <span className="text-[10px] text-muted-foreground">Visita Técnica</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Car className="w-3 h-3 text-cyan-400" />
-            <span className="text-[10px] text-muted-foreground">Carro</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Monitor className="w-3 h-3 text-violet-400" />
-            <span className="text-[10px] text-muted-foreground">Data Show</span>
-          </div>
+          {isTecnico ? (
+            <>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[hsl(var(--status-andamento-text))]" />
+                <span className="text-[10px] text-muted-foreground">Treinamento</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-orange-500" />
+                <span className="text-[10px] text-muted-foreground">Visita Técnica</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Car className="w-3 h-3 text-cyan-400" />
+                <span className="text-[10px] text-muted-foreground">Carro</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Monitor className="w-3 h-3 text-violet-400" />
+                <span className="text-[10px] text-muted-foreground">Data Show</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-red-500" />
+                <span className="text-[10px] text-muted-foreground">Reunião</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-purple-400" />
+                <span className="text-[10px] text-muted-foreground">Compromisso</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
@@ -257,18 +288,18 @@ const CalendarioTecnico = () => {
                       <span
                         className={cn(
                           "w-2.5 h-2.5 rounded-full flex-shrink-0",
-                          c.tipo === "treinamento" ? "bg-[hsl(var(--status-andamento-text))]" : "bg-orange-500"
+                          getTipoColor(c.tipo)
                         )}
                       />
                       <div className="flex-1 min-w-0">
-                        <span className="text-xs font-medium text-foreground capitalize">{c.tipo === "treinamento" ? "Treinamento" : "Visita Técnica"}</span>
+                        <span className="text-xs font-medium text-foreground capitalize">{getTipoLabel(c.tipo)}</span>
                         <span className="text-[11px] text-muted-foreground ml-2">
                           {format(c.data, "dd/MM/yyyy", { locale: ptBR })} • {c.horaInicio} - {c.horaFim}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        {c.usarCarro && <Car className="w-3.5 h-3.5 text-cyan-400" />}
-                        {c.usarDataShow && <Monitor className="w-3.5 h-3.5 text-violet-400" />}
+                        {isTecnico && c.usarCarro && <Car className="w-3.5 h-3.5 text-cyan-400" />}
+                        {isTecnico && c.usarDataShow && <Monitor className="w-3.5 h-3.5 text-violet-400" />}
                       </div>
                       <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                         <UserIcon className="w-3 h-3" />
@@ -308,41 +339,55 @@ const CalendarioTecnico = () => {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Tipo</Label>
-              <Select value={formData.tipo} onValueChange={(v) => setFormData({ ...formData, tipo: v as "treinamento" | "visita" })}>
-                <SelectTrigger className="h-9 rounded-lg text-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="treinamento">Treinamento</SelectItem>
-                  <SelectItem value="visita">Visita Técnica</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center justify-between py-1">
-              <Label className="text-xs flex items-center gap-1.5"><Car className="w-3.5 h-3.5 text-cyan-400" /> Vai usar carro?</Label>
-              <Switch checked={formData.usarCarro} onCheckedChange={(v) => setFormData({ ...formData, usarCarro: v, tipoCarro: v ? formData.tipoCarro : "" })} />
-            </div>
-            {formData.usarCarro && (
-              <div className="space-y-1.5 animate-fade-in">
-                <Label className="text-xs">Tipo de carro</Label>
-                <Select value={formData.tipoCarro} onValueChange={(v) => setFormData({ ...formData, tipoCarro: v as "mobi" | "alugado" })}>
+              {isTecnico ? (
+                <Select value={formData.tipo} onValueChange={(v) => setFormData({ ...formData, tipo: v as any })}>
                   <SelectTrigger className="h-9 rounded-lg text-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="mobi">Mobi</SelectItem>
-                    <SelectItem value="alugado">Alugado</SelectItem>
+                    <SelectItem value="treinamento">Treinamento</SelectItem>
+                    <SelectItem value="visita">Visita Técnica</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            )}
-            <div className="flex items-center justify-between py-1">
-              <Label className="text-xs flex items-center gap-1.5"><Monitor className="w-3.5 h-3.5 text-violet-400" /> Vai usar Data Show?</Label>
-              <Switch checked={formData.usarDataShow} onCheckedChange={(v) => setFormData({ ...formData, usarDataShow: v })} />
+              ) : (
+                <Select value={formData.tipo} onValueChange={(v) => setFormData({ ...formData, tipo: v as any })}>
+                  <SelectTrigger className="h-9 rounded-lg text-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="reuniao">Reunião</SelectItem>
+                    <SelectItem value="compromisso">Compromisso</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
+            {isTecnico && (
+              <>
+                <div className="flex items-center justify-between py-1">
+                  <Label className="text-xs flex items-center gap-1.5"><Car className="w-3.5 h-3.5 text-cyan-400" /> Vai usar carro?</Label>
+                  <Switch checked={formData.usarCarro} onCheckedChange={(v) => setFormData({ ...formData, usarCarro: v, tipoCarro: v ? formData.tipoCarro : "" })} />
+                </div>
+                {formData.usarCarro && (
+                  <div className="space-y-1.5 animate-fade-in">
+                    <Label className="text-xs">Tipo de carro</Label>
+                    <Select value={formData.tipoCarro} onValueChange={(v) => setFormData({ ...formData, tipoCarro: v as "mobi" | "alugado" })}>
+                      <SelectTrigger className="h-9 rounded-lg text-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="mobi">Mobi</SelectItem>
+                        <SelectItem value="alugado">Alugado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="flex items-center justify-between py-1">
+                  <Label className="text-xs flex items-center gap-1.5"><Monitor className="w-3.5 h-3.5 text-violet-400" /> Vai usar Data Show?</Label>
+                  <Switch checked={formData.usarDataShow} onCheckedChange={(v) => setFormData({ ...formData, usarDataShow: v })} />
+                </div>
+              </>
+            )}
             <div className="flex gap-2 pt-2">
               <Button variant="outline" onClick={() => { setModalOpen(false); resetForm(); }} className="flex-1 h-9 rounded-lg text-xs btn-3d neon-hover animate-float">
                 Cancelar
               </Button>
               <Button
                 onClick={handleSave}
-                disabled={!formData.data || !formData.horaInicio || !formData.horaFim || !formData.tipo}
+                disabled={!formData.data || !formData.horaInicio || !formData.tipo}
                 className="flex-1 h-9 rounded-lg text-xs bg-primary text-primary-foreground hover:bg-primary/90 btn-3d neon-hover animate-float"
                 style={{ animationDelay: "0.15s" }}
               >
@@ -360,8 +405,8 @@ const CalendarioTecnico = () => {
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-base">
-                  <span className={cn("w-3 h-3 rounded-full", selectedEvent.tipo === "treinamento" ? "bg-[hsl(var(--status-andamento-text))]" : "bg-orange-500")} />
-                  {selectedEvent.tipo === "treinamento" ? "Treinamento" : "Visita Técnica"}
+                  <span className={cn("w-3 h-3 rounded-full", getTipoColor(selectedEvent.tipo))} />
+                  {getTipoLabel(selectedEvent.tipo)}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-3 pt-2 text-sm">
@@ -374,35 +419,37 @@ const CalendarioTecnico = () => {
                   <span className="font-medium">{selectedEvent.horaInicio} - {selectedEvent.horaFim}</span>
                 </div>
 
-                {/* Carro section with icon */}
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground flex items-center gap-1.5">
-                    <Car className="w-4 h-4 text-cyan-400" /> Carro
-                  </span>
-                  {selectedEvent.usarCarro ? (
-                    <span className="font-medium flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-cyan-400/10 text-cyan-400 text-xs">
-                      <Car className="w-3.5 h-3.5" />
-                      {selectedEvent.tipoCarro === "mobi" ? "Mobi" : "Alugado"}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground text-xs">Não</span>
-                  )}
-                </div>
-
-                {/* Data Show section with icon */}
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground flex items-center gap-1.5">
-                    <Monitor className="w-4 h-4 text-violet-400" /> Data Show
-                  </span>
-                  {selectedEvent.usarDataShow ? (
-                    <span className="font-medium flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-violet-400/10 text-violet-400 text-xs">
-                      <Monitor className="w-3.5 h-3.5" />
-                      Sim
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground text-xs">Não</span>
-                  )}
-                </div>
+                {/* Carro and Data Show - only for técnico */}
+                {isTecnico && (
+                  <>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground flex items-center gap-1.5">
+                        <Car className="w-4 h-4 text-cyan-400" /> Carro
+                      </span>
+                      {selectedEvent.usarCarro ? (
+                        <span className="font-medium flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-cyan-400/10 text-cyan-400 text-xs">
+                          <Car className="w-3.5 h-3.5" />
+                          {selectedEvent.tipoCarro === "mobi" ? "Mobi" : "Alugado"}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">Não</span>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground flex items-center gap-1.5">
+                        <Monitor className="w-4 h-4 text-violet-400" /> Data Show
+                      </span>
+                      {selectedEvent.usarDataShow ? (
+                        <span className="font-medium flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-violet-400/10 text-violet-400 text-xs">
+                          <Monitor className="w-3.5 h-3.5" />
+                          Sim
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">Não</span>
+                      )}
+                    </div>
+                  </>
+                )}
 
                 {/* Criado por */}
                 <div className="flex justify-between items-center pt-1 border-t border-border">
