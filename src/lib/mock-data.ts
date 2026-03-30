@@ -100,6 +100,27 @@ export interface KanbanVariavelCard {
   attachments?: ProjectAttachment[];
 }
 
+// Renovação cards
+export type RenovacaoStatus = "doc_vencidos" | "revisitar" | "medicoes_pendentes" | "em_andamento" | "finalizada";
+
+export interface RenovacaoCard {
+  id: string;
+  title: string;
+  description: string;
+  status: RenovacaoStatus;
+  empresa?: string;
+  cnpj?: string;
+  responsavel?: string;
+  regiao?: string;
+  prioridade?: TecnicoPrioridade;
+  data?: string;
+  contato_nome?: string;
+  contato_telefone?: string;
+  contato_email?: string;
+  dados_extras?: string;
+  createdAt?: string;
+}
+
 export const mockUsers: User[] = [
   { id: "1", full_name: "Arthur Fogolin", cpf: "000.000.000-00", email: "admin@medwork.com", password: "admin123", is_admin: true, company_id: "1", sectors: ["diretoria", "tecnico", "comercial", "saude", "financeiro"] },
   { id: "2", full_name: "Carlos Mendes", cpf: "987.654.321-00", email: "carlos@medwork.com", password: "123456", is_admin: false, company_id: "1", sectors: ["tecnico"] },

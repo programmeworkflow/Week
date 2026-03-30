@@ -15,7 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Project, Sector, TecnicoProject, KanbanVariavelCard, ProjectAttachment, TECNICO_RESPONSAVEIS, TECNICO_PRIORIDADES, TECNICO_STATUS_OPTIONS } from "@/lib/mock-data";
+import { Project, Sector, TecnicoProject, KanbanVariavelCard, RenovacaoCard, RenovacaoStatus, ProjectAttachment, TECNICO_RESPONSAVEIS, TECNICO_PRIORIDADES, TECNICO_STATUS_OPTIONS } from "@/lib/mock-data";
 import { getBoardTitle } from "@/lib/sectors";
 import { cn } from "@/lib/utils";
 import { Download, RefreshCw, Crown, Filter, Copy, ArrowRightLeft, Plus, Layers, PinOff, Edit2, Trash2, X, Send, Mic, Square, Play, Pause, Paperclip } from "lucide-react";
@@ -69,6 +69,22 @@ const variavelColumnColors: Record<string, string> = {
   pending: "border-t-2 border-t-amber-400 shadow-[0_-2px_10px_rgba(251,191,36,0.3)]",
   review: "border-t-2 border-t-violet-400 shadow-[0_-2px_10px_rgba(167,139,250,0.3)]",
   done: "border-t-2 border-t-emerald-400 shadow-[0_-2px_10px_rgba(52,211,153,0.3)]",
+};
+
+const renovacaoColumns: { title: string; status: RenovacaoStatus }[] = [
+  { title: "Documentos vencidos", status: "doc_vencidos" },
+  { title: "Revisitar", status: "revisitar" },
+  { title: "Medições pendentes", status: "medicoes_pendentes" },
+  { title: "Em andamento", status: "em_andamento" },
+  { title: "Finalizadas", status: "finalizada" },
+];
+
+const renovacaoColumnColors: Record<string, string> = {
+  doc_vencidos: "border-t-2 border-t-red-400 shadow-[0_-2px_10px_rgba(248,113,113,0.3)]",
+  revisitar: "border-t-2 border-t-orange-400 shadow-[0_-2px_10px_rgba(251,146,60,0.3)]",
+  medicoes_pendentes: "border-t-2 border-t-yellow-400 shadow-[0_-2px_10px_rgba(250,204,21,0.3)]",
+  em_andamento: "border-t-2 border-t-blue-400 shadow-[0_-2px_10px_rgba(96,165,250,0.3)]",
+  finalizada: "border-t-2 border-t-emerald-400 shadow-[0_-2px_10px_rgba(52,211,153,0.3)]",
 };
 
 const sectorNeonColors: Record<string, string> = {
@@ -250,6 +266,7 @@ const Dashboard = () => {
     projects, users, updateProjectStatus, updateProject,
     tecnicoProjects, updateTecnicoProject, addTecnicoProject, deleteTecnicoProject,
     kanbanVariavelCards, addKanbanVariavelCard, updateKanbanVariavelCard, updateKanbanVariavelStatus, deleteKanbanVariavelCard,
+    renovacaoCards, addRenovacaoCard, updateRenovacaoStatus,
     addMessage, getProjectMessages, addTecnicoAttachment, removeTecnicoAttachment,
   } = useProjects();
   const { user, canAccessSector } = useAuth();
@@ -405,6 +422,23 @@ const Dashboard = () => {
   const handleVariavelCardClick = (project: Project) => {
     navigate(`/projeto/${project.id}?type=variavel`);
   };
+
+  const handleRenovacaoDrop = (cardId: string, newStatus: Project["status"]) => {
+    updateRenovacaoStatus(cardId, newStatus as RenovacaoStatus);
+  };
+
+  // Convert renovacao cards to Project-like objects for KanbanColumn
+  const renovacaoAsProjects = renovacaoCards.map((c): Project => ({
+    id: c.id,
+    company_id: "1",
+    project_name: c.title || c.empresa || "",
+    description: c.description || "",
+    due_date: c.data || "",
+    status: c.status as any,
+    sector: "tecnico" as Sector,
+    responsible_ids: [],
+    created_at: c.createdAt || "",
+  }));
 
   const handleSaveEditTecnico = () => {
     if (!editingTecnico) return;
@@ -633,7 +667,52 @@ const Dashboard = () => {
               })}
             </div>
 
-            {/* Renovation Board */}
+            {/* Renovação Board - Técnico only */}
+            {isTecnico && !isGeneralDashboard && (
+              <div className="mt-10 animate-fade-in">
+                <div className="flex items-center gap-2.5 mb-4">
+                  <div className="w-7 h-7 rounded-[10px] bg-orange-400/10 flex items-center justify-center">
+                    <RefreshCw className="w-3.5 h-3.5 text-orange-400 stroke-[1.5]" />
+                  </div>
+                  <h2 className="text-[15px] font-semibold text-foreground">Renovação</h2>
+                  <span className="text-[10px] text-muted-foreground">(renovações e pendências)</span>
+                  <Button variant="outline" size="sm" onClick={() => {
+                    addRenovacaoCard({
+                      title: "Nova renovação",
+                      description: "",
+                      status: "doc_vencidos",
+                      empresa: "Nova renovação",
+                      prioridade: "Baixa",
+                      createdAt: new Date().toISOString(),
+                    });
+                  }} className="ml-auto gap-1.5 text-xs rounded-lg h-8 btn-3d neon-hover animate-float">
+                    <Plus className="w-3.5 h-3.5" /> Novo card
+                  </Button>
+                </div>
+                <div className={`bg-card rounded-[12px] border p-5 neon-card shadow-[0_0_15px_rgba(251,146,60,0.15)] border-orange-400/20`}>
+                  <div className="flex gap-5 overflow-x-auto pb-2 snap-x snap-mandatory md:snap-none">
+                    {renovacaoColumns.map((col) => {
+                      const colCards = renovacaoAsProjects.filter((p) => p.status === col.status);
+                      return (
+                        <PaginatedKanbanColumn
+                          key={`ren-${col.status}`}
+                          col={{ title: col.title, status: col.status as any }}
+                          projects={colCards}
+                          users={users}
+                          onDrop={handleRenovacaoDrop}
+                          locked={false}
+                          extraClass={renovacaoColumnColors[col.status] || ""}
+                          maxCards={MAX_CARDS_VARIAVEIS}
+                          onViewAll={handleViewAll}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Renovation Board - Other sectors */}
             {!isTecnico && (
               <div className="mt-10 animate-fade-in">
                 <div className="flex items-center gap-2.5 mb-4">

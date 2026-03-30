@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
-import { Project, User, ProjectMessage, ProjectAttachment, Sector, TecnicoProject, KanbanVariavelCard } from "@/lib/mock-data";
+import { Project, User, ProjectMessage, ProjectAttachment, Sector, TecnicoProject, KanbanVariavelCard, RenovacaoCard, RenovacaoStatus } from "@/lib/mock-data";
 import { supabase } from "@/lib/supabase";
 
 interface ProjectContextType {
@@ -33,6 +33,12 @@ interface ProjectContextType {
   deleteKanbanVariavelCard: (id: string) => void;
   updateKanbanVariavelStatus: (id: string, status: Project["status"]) => void;
   transferTecnicoToSector: (tecnicoId: string, newSector: Sector, description: string, userId: string) => void;
+  // Renovação
+  renovacaoCards: RenovacaoCard[];
+  addRenovacaoCard: (card: Omit<RenovacaoCard, "id">) => void;
+  updateRenovacaoCard: (id: string, data: Partial<Omit<RenovacaoCard, "id">>) => void;
+  deleteRenovacaoCard: (id: string) => void;
+  updateRenovacaoStatus: (id: string, status: RenovacaoStatus) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | null>(null);
@@ -49,22 +55,25 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<ProjectMessage[]>([]);
   const [tecnicoProjects, setTecnicoProjects] = useState<TecnicoProject[]>([]);
   const [kanbanVariavelCards, setKanbanVariavelCards] = useState<KanbanVariavelCard[]>([]);
+  const [renovacaoCards, setRenovacaoCards] = useState<RenovacaoCard[]>([]);
 
   // Fetch all data from Supabase on mount
   useEffect(() => {
     const load = async () => {
-      const [usersRes, projRes, tecRes, kvRes, msgRes] = await Promise.all([
+      const [usersRes, projRes, tecRes, kvRes, msgRes, renRes] = await Promise.all([
         supabase.from("medwork_users").select("*"),
         supabase.from("medwork_projects").select("*"),
         supabase.from("medwork_tecnico_projects").select("*"),
         supabase.from("medwork_kanban_variavel").select("*"),
         supabase.from("medwork_messages").select("*"),
+        supabase.from("medwork_renovacao").select("*"),
       ]);
       if (usersRes.data) setUsers(usersRes.data.map((u: any) => ({ ...u, sectors: u.sectors || [] })));
       if (projRes.data) setProjects(projRes.data.map((p: any) => ({ ...p, responsible_ids: p.responsible_ids || [] })));
       if (tecRes.data) setTecnicoProjects(tecRes.data);
       if (kvRes.data) setKanbanVariavelCards(kvRes.data.map((k: any) => ({ ...k, createdAt: k.created_at || k.createdAt || "" })));
       if (msgRes.data) setMessages(msgRes.data.map((m: any) => ({ ...m, criado_em: m.criado_em || "" })));
+      if (renRes.data) setRenovacaoCards(renRes.data.map((r: any) => ({ ...r, createdAt: r.created_at || "" })));
     };
     load();
   }, []);
@@ -207,6 +216,38 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     await supabase.from("medwork_kanban_variavel").update({ status }).eq("id", id);
   };
 
+  // --- Renovação ---
+  const addRenovacaoCard = async (card: Omit<RenovacaoCard, "id">) => {
+    const id = String(Date.now());
+    const newCard = { ...card, id };
+    setRenovacaoCards((prev) => [...prev, newCard as RenovacaoCard]);
+    await supabase.from("medwork_renovacao").insert({
+      id, title: card.title || card.empresa || "", description: card.description || "",
+      status: card.status || "doc_vencidos", empresa: card.empresa || "", cnpj: card.cnpj || "",
+      responsavel: card.responsavel || "", regiao: card.regiao || "", prioridade: card.prioridade || "Baixa",
+      data: card.data || "", contato_nome: card.contato_nome || "", contato_telefone: card.contato_telefone || "",
+      contato_email: card.contato_email || "", dados_extras: card.dados_extras || "",
+      created_at: card.createdAt || new Date().toISOString(),
+    });
+  };
+
+  const updateRenovacaoCard = async (id: string, data: Partial<Omit<RenovacaoCard, "id">>) => {
+    setRenovacaoCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...data } : c)));
+    const dbData: any = { ...data };
+    if (dbData.createdAt) { dbData.created_at = dbData.createdAt; delete dbData.createdAt; }
+    await supabase.from("medwork_renovacao").update(dbData).eq("id", id);
+  };
+
+  const deleteRenovacaoCard = async (id: string) => {
+    setRenovacaoCards((prev) => prev.filter((c) => c.id !== id));
+    await supabase.from("medwork_renovacao").delete().eq("id", id);
+  };
+
+  const updateRenovacaoStatus = async (id: string, status: RenovacaoStatus) => {
+    setRenovacaoCards((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c)));
+    await supabase.from("medwork_renovacao").update({ status }).eq("id", id);
+  };
+
   // --- Transfer ---
   const transferTecnicoToSector = async (tecnicoId: string, newSector: Sector, description: string, userId: string) => {
     const tp = tecnicoProjects.find(t => t.id === tecnicoId);
@@ -264,6 +305,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       addTecnicoAttachment, removeTecnicoAttachment,
       addMessageAttachment,
       addKanbanVariavelCard, updateKanbanVariavelCard, deleteKanbanVariavelCard, updateKanbanVariavelStatus,
+      renovacaoCards, addRenovacaoCard, updateRenovacaoCard, deleteRenovacaoCard, updateRenovacaoStatus,
       transferTecnicoToSector,
     }}>
       {children}
