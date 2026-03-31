@@ -1,5 +1,5 @@
 const CLIENT_ID = "552476458118-6817lk1jgg1a0i8k438dlsvus98haqgo.apps.googleusercontent.com";
-const SCOPES = "https://www.googleapis.com/auth/calendar.events";
+const SCOPES = "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.email";
 const CALENDAR_API = "https://www.googleapis.com/calendar/v3";
 
 let tokenClient: any = null;
@@ -36,6 +36,17 @@ export const initGoogleAuth = (): Promise<string> => {
     });
     tokenClient.requestAccessToken();
   });
+};
+
+export const getGoogleEmail = async (): Promise<string> => {
+  if (!accessToken) return "";
+  try {
+    const res = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const data = await res.json();
+    return data.email || "";
+  } catch { return ""; }
 };
 
 export const disconnectGoogle = () => {

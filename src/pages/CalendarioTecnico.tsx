@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { supabase } from "@/lib/supabase";
-import { isGoogleConnected, initGoogleAuth, disconnectGoogle, createGoogleEvent, updateGoogleEvent, deleteGoogleEvent } from "@/lib/googleCalendar";
+import { isGoogleConnected, initGoogleAuth, disconnectGoogle, createGoogleEvent, updateGoogleEvent, deleteGoogleEvent, getGoogleEmail } from "@/lib/googleCalendar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -86,6 +86,11 @@ const CalendarioTecnico = () => {
     try {
       await initGoogleAuth();
       setGoogleConnected(true);
+      // Save Google email to user profile
+      const googleEmail = await getGoogleEmail();
+      if (googleEmail && user) {
+        await supabase.from("medwork_users").update({ google_email: googleEmail }).eq("id", user.id);
+      }
     } catch (err) {
       console.error("Erro ao conectar Google:", err);
     }
@@ -491,18 +496,24 @@ const CalendarioTecnico = () => {
             {/* Para quem (convidado Google Calendar) */}
             <div className="space-y-1.5">
               <Label className="text-xs">Para quem? (notificação no Google)</Label>
-              <Select value={formData.paraNome || "ninguem"} onValueChange={(v) => {
+              <Select value={formData.paraNome || "ninguem"} onValueChange={async (v) => {
                 if (v === "ninguem") {
                   setFormData({ ...formData, paraNome: "", paraEmail: "" });
                 } else {
+                  // Fetch google_email from DB
                   const u = users.find(u => u.full_name === v);
-                  setFormData({ ...formData, paraNome: v, paraEmail: u?.email || "" });
+                  let gEmail = "";
+                  if (u) {
+                    const { data } = await supabase.from("medwork_users").select("google_email").eq("id", u.id).single();
+                    gEmail = data?.google_email || u.email;
+                  }
+                  setFormData({ ...formData, paraNome: v, paraEmail: gEmail });
                 }
               }}>
                 <SelectTrigger className="h-9 rounded-lg text-xs"><SelectValue placeholder="Selecione a pessoa" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ninguem">Ninguém (só eu)</SelectItem>
-                  {users.map(u => <SelectItem key={u.id} value={u.full_name}>{u.full_name} ({u.email})</SelectItem>)}
+                  {users.map(u => <SelectItem key={u.id} value={u.full_name}>{u.full_name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

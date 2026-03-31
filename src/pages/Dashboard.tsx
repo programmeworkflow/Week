@@ -66,8 +66,8 @@ const treinamentoColumns: { title: string; status: Project["status"] }[] = [
 
 const diretoriaColumns: { title: string; status: Project["status"] }[] = [
   { title: "Demanda não iniciada", status: "not_authenticated" },
-  { title: "Demanda verificada", status: "not_started" },
-  { title: "Demanda pendente", status: "pending" },
+  { title: "Em andamento", status: "not_started" },
+  { title: "Revisar", status: "pending" },
   { title: "Demanda concluída", status: "done" },
 ];
 
