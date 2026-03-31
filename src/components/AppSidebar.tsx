@@ -199,8 +199,6 @@ export const AppSidebar = () => {
                             navigate(id === "esocial" ? "/esocial/procuracao" : sectorDashPath);
                           } else {
                             toggleSector(id);
-                            if (!isExpanded && id === "esocial") navigate("/esocial/procuracao");
-                            if (!isExpanded && id !== "esocial") navigate(sectorDashPath);
                           }
                         }}
                         className={cn(
