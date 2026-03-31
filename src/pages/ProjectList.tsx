@@ -434,7 +434,7 @@ const TecnicoSpreadsheet = () => {
                   <Label className="text-xs">Responsável</Label>
                   <Select value={editingProject.responsavel} onValueChange={(v) => setEditingProject({ ...editingProject, responsavel: v as any })}>
                     <SelectTrigger className="h-9 text-sm rounded-lg"><SelectValue /></SelectTrigger>
-                    <SelectContent>{[...users.map(u => u.full_name), "Zona de espera"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                    <SelectContent>{[...users.filter(u => u.sectors?.includes("tecnico" as any)).map(u => u.full_name), "Zona de espera"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1">

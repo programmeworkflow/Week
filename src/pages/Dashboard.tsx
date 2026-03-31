@@ -524,9 +524,15 @@ const Dashboard = () => {
 
   const columns = getColumnsForSector();
 
-  const registerPremiacao = async (projectName: string, sectorName: string, responsavelName?: string) => {
-    const name = responsavelName || user?.full_name || "Desconhecido";
-    const userId = user?.id || "0";
+  const registerPremiacao = async (projectName: string, sectorName: string, responsavelName?: string, responsavelIds?: string[]) => {
+    // Points go to the responsible person, not the person who moved it
+    const respUser = responsavelIds?.length
+      ? users.find(u => responsavelIds.includes(u.id))
+      : responsavelName
+        ? users.find(u => u.full_name === responsavelName)
+        : null;
+    const name = respUser?.full_name || responsavelName || "Desconhecido";
+    const userId = respUser?.id || "0";
     await supabase.from("medwork_premiacao").insert({
       id: String(Date.now()),
       user_name: name,
@@ -544,9 +550,8 @@ const Dashboard = () => {
       if (p && p.status !== "done") {
         setAchievementName(p.project_name);
         setShowAchievement(true);
-        // Find responsible user name
-        const respUser = users.find(u => p.responsible_ids?.includes(u.id));
-        registerPremiacao(p.project_name, sector || "geral", respUser?.full_name);
+        // Points go to the responsible person of the project
+        registerPremiacao(p.project_name, sector || "geral", undefined, p.responsible_ids);
       }
     }
     updateProjectStatus(projectId, newStatus);
@@ -1082,7 +1087,7 @@ const Dashboard = () => {
                         <Label className="text-xs">Responsável</Label>
                         <Select value={editingTecnico.responsavel} onValueChange={(v) => setEditingTecnico({ ...editingTecnico, responsavel: v as any })}>
                           <SelectTrigger className="h-9 text-sm rounded-lg"><SelectValue /></SelectTrigger>
-                          <SelectContent>{[...users.map(u => u.full_name), "Zona de espera"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                          <SelectContent>{[...users.filter(u => u.sectors?.includes("tecnico" as any)).map(u => u.full_name), "Zona de espera"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-1">

@@ -243,7 +243,7 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
           <div className="space-y-2">
             <Label>Responsáveis</Label>
             <div className="flex flex-wrap gap-2">
-              {users.map((u) => (
+              {users.filter((u) => !form.sector || u.sectors?.includes(form.sector as any)).map((u) => (
                   <button
                     key={u.id}
                     type="button"

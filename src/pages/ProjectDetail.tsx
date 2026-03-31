@@ -446,7 +446,7 @@ const ProjectDetail = () => {
                           <Label>Responsável</Label>
                           <Select value={f.responsavel} onValueChange={(v) => setForm((p: any) => ({ ...p, responsavel: v }))}>
                             <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                            <SelectContent>{[...users.map(u => u.full_name), "Zona de espera"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                            <SelectContent>{[...users.filter(u => u.sectors?.includes("tecnico" as any)).map(u => u.full_name), "Zona de espera"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                           </Select>
                         </div>
                         <div className="space-y-2">
@@ -533,7 +533,7 @@ const ProjectDetail = () => {
                           <Label>Responsável</Label>
                           <Select value={f.responsavel} onValueChange={(v) => setForm((p: any) => ({ ...p, responsavel: v }))}>
                             <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                            <SelectContent>{[...users.map(u => u.full_name), "Zona de espera"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                            <SelectContent>{[...users.filter(u => u.sectors?.includes("tecnico" as any)).map(u => u.full_name), "Zona de espera"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                           </Select>
                         </div>
                         <div className="space-y-2">
@@ -638,7 +638,7 @@ const ProjectDetail = () => {
                       <div className="space-y-2">
                         <Label>Responsáveis</Label>
                         <div className="flex flex-wrap gap-2">
-                          {users.map((u) => (
+                          {users.filter((u) => !regularProject?.sector || u.sectors?.includes(regularProject.sector as any)).map((u) => (
                             <button key={u.id} type="button" onClick={() => toggleResponsible(u.id)}
                               className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all duration-200 ${
                                 f.responsible_ids?.includes(u.id) ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-muted text-muted-foreground border-border hover:border-primary/50"
