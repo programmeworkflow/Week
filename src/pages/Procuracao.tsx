@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
@@ -76,24 +76,25 @@ const Procuracao = () => {
     empresa: "", cnpj_cpf: "", situacao: "", contrato: "", email: "", telefone: "", procuracao_vencimento: "", contabilidade: "",
   });
 
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 50;
+
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase.from("medwork_procuracoes").select("*");
-      if (data) setRows(data);
+      if (data) {
+        // Auto-update situacao on load (batch, no individual DB calls)
+        const updated = data.map((r: any) => {
+          if (!r.procuracao_vencimento || r.situacao === "Aguardando resposta") return r;
+          const autoSit = getSituacaoFromDate(r.procuracao_vencimento);
+          if (autoSit && r.situacao !== autoSit) return { ...r, situacao: autoSit };
+          return r;
+        });
+        setRows(updated);
+      }
     };
     load();
   }, []);
-
-  // Auto-update situacao based on procuracao date
-  useEffect(() => {
-    rows.forEach((r) => {
-      if (!r.procuracao_vencimento) return;
-      const autoSituacao = getSituacaoFromDate(r.procuracao_vencimento);
-      if (autoSituacao && r.situacao !== autoSituacao && r.situacao !== "Aguardando resposta") {
-        updateRow(r.id, { situacao: autoSituacao });
-      }
-    });
-  }, [rows.map(r => r.procuracao_vencimento).join(",")]);
 
   const exportExcel = () => {
     const data = rows.map(r => ({
@@ -162,14 +163,19 @@ const Procuracao = () => {
     setAdding(false);
   };
 
-  const updateRow = async (id: string, data: Partial<ProcuracaoRow>) => {
-    // If procuracao_vencimento changed, auto-update situacao
+  const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  const updateRow = (id: string, data: Partial<ProcuracaoRow>) => {
     if (data.procuracao_vencimento) {
       const autoSit = getSituacaoFromDate(data.procuracao_vencimento);
       if (autoSit) data.situacao = autoSit;
     }
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...data } : r)));
-    await supabase.from("medwork_procuracoes").update(data).eq("id", id);
+    // Debounce DB save (500ms)
+    if (saveTimers.current[id]) clearTimeout(saveTimers.current[id]);
+    saveTimers.current[id] = setTimeout(() => {
+      supabase.from("medwork_procuracoes").update(data).eq("id", id);
+    }, 500);
   };
 
   const deleteRow = async (id: string) => {
@@ -219,7 +225,7 @@ const Procuracao = () => {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, i) => (
+              {rows.slice((page - 1) * PER_PAGE, page * PER_PAGE).map((r, i) => (
                 <tr key={r.id} className={cn("border-b border-border/50 hover:bg-accent/30 transition-colors", i % 2 === 0 ? "" : "bg-muted/20")}>
                   <td className="px-3 py-1.5">
                     <Input value={r.empresa} onChange={(e) => updateRow(r.id, { empresa: e.target.value })} className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
@@ -299,6 +305,17 @@ const Procuracao = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {rows.length > PER_PAGE && (
+          <div className="flex items-center justify-between mt-3 px-1">
+            <span className="text-xs text-muted-foreground">{rows.length} registros — página {page} de {Math.ceil(rows.length / PER_PAGE)}</span>
+            <div className="flex gap-1">
+              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="h-7 text-xs rounded-lg px-3">Anterior</Button>
+              <Button variant="outline" size="sm" disabled={page >= Math.ceil(rows.length / PER_PAGE)} onClick={() => setPage(p => p + 1)} className="h-7 text-xs rounded-lg px-3">Próxima</Button>
+            </div>
+          </div>
+        )}
 
         {/* Legend */}
         <div className="flex gap-4 mt-4 text-xs text-muted-foreground">
