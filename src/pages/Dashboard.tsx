@@ -291,9 +291,30 @@ const TreinamentoTable = ({ grupo }: { grupo: string }) => {
   const [adding, setAdding] = useState(false);
   const [newRow, setNewRow] = useState({ treinamento: "", data: "", aluno: "", instrutor: "" });
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newRow.treinamento) return;
     addTreinamentoRow({ grupo, ...newRow });
+    // Auto-create treinamento in calendario técnico if date is provided
+    if (newRow.data && newRow.data.length >= 8) {
+      const parts = newRow.data.split("/");
+      if (parts.length === 3) {
+        const isoDate = `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+        await supabase.from("medwork_compromissos").insert({
+          id: String(Date.now()),
+          sector: "tecnico",
+          data: isoDate,
+          hora_inicio: "08:00",
+          hora_fim: "12:00",
+          tipo: "treinamento",
+          usar_carro: false,
+          tipo_carro: "",
+          usar_data_show: false,
+          criado_por: `${grupo}`,
+          instrutor: newRow.instrutor || "",
+          origem: grupo.toLowerCase(),
+        });
+      }
+    }
     setNewRow({ treinamento: "", data: "", aluno: "", instrutor: "" });
     setAdding(false);
   };
@@ -350,7 +371,7 @@ const TreinamentoTable = ({ grupo }: { grupo: string }) => {
                 <td className="px-3 py-1.5"><Input value={newRow.instrutor} onChange={(e) => setNewRow({ ...newRow, instrutor: e.target.value })} placeholder="Nome do instrutor" className="h-7 text-xs rounded-lg" /></td>
                 <td className="px-3 py-1.5 text-center">
                   <div className="flex gap-1 justify-center">
-                    <Button size="icon" onClick={handleAdd} className="h-6 w-6 rounded-lg bg-primary text-primary-foreground"><Plus className="w-3 h-3" /></Button>
+                    <Button size="sm" onClick={handleAdd} className="h-6 text-[10px] px-2 rounded-lg bg-primary text-primary-foreground">Salvar</Button>
                     <Button size="icon" variant="ghost" onClick={() => setAdding(false)} className="h-6 w-6 rounded-lg"><X className="w-3 h-3" /></Button>
                   </div>
                 </td>

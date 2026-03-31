@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -37,6 +38,7 @@ interface Compromisso {
   usarDataShow: boolean;
   tipo: "treinamento" | "visita" | "reuniao" | "compromisso";
   criadoPor: string;
+  instrutor?: string;
 }
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -48,6 +50,28 @@ const CalendarioTecnico = () => {
   const [baseMonth, setBaseMonth] = useState(new Date());
   const [compromissos, setCompromissos] = useState<Compromisso[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
+
+  // Load compromissos from Supabase
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase.from("medwork_compromissos").select("*").eq("sector", currentSector);
+      if (data) {
+        setCompromissos(data.map((c: any) => ({
+          id: c.id,
+          data: new Date(c.data),
+          horaInicio: c.hora_inicio || "",
+          horaFim: c.hora_fim || "",
+          usarCarro: c.usar_carro || false,
+          tipoCarro: c.tipo_carro || undefined,
+          usarDataShow: c.usar_data_show || false,
+          tipo: c.tipo || "treinamento",
+          criadoPor: c.criado_por || "",
+          instrutor: c.instrutor || "",
+        })));
+      }
+    };
+    load();
+  }, [currentSector]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<Compromisso | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -93,11 +117,12 @@ const CalendarioTecnico = () => {
     setModalOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.data || !formData.horaInicio || !formData.tipo) return;
 
+    const id = editingId || crypto.randomUUID();
     const compromisso: Compromisso = {
-      id: editingId || crypto.randomUUID(),
+      id,
       data: new Date(formData.data + "T12:00:00"),
       horaInicio: formData.horaInicio,
       horaFim: formData.horaFim,
@@ -108,19 +133,30 @@ const CalendarioTecnico = () => {
       criadoPor: user.full_name,
     };
 
+    const dbRow = {
+      id, sector: currentSector, data: formData.data,
+      hora_inicio: formData.horaInicio, hora_fim: formData.horaFim,
+      tipo: formData.tipo, usar_carro: formData.usarCarro,
+      tipo_carro: formData.tipoCarro || "", usar_data_show: formData.usarDataShow,
+      criado_por: user.full_name, instrutor: "", origem: "manual",
+    };
+
     if (editingId) {
       setCompromissos((prev) => prev.map((c) => (c.id === editingId ? compromisso : c)));
+      await supabase.from("medwork_compromissos").update(dbRow).eq("id", editingId);
     } else {
       setCompromissos((prev) => [...prev, compromisso]);
+      await supabase.from("medwork_compromissos").insert(dbRow);
     }
     setModalOpen(false);
     resetForm();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     setCompromissos((prev) => prev.filter((c) => c.id !== id));
     setDeleteConfirm(null);
     setSelectedEvent(null);
+    await supabase.from("medwork_compromissos").delete().eq("id", id);
   };
 
   // Render 4 months: previous, current, next, next+1
@@ -449,6 +485,16 @@ const CalendarioTecnico = () => {
                       )}
                     </div>
                   </>
+                )}
+
+                {/* Instrutor (if from planilha) */}
+                {selectedEvent.instrutor && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground text-sm">Instrutor</span>
+                    <span className="font-medium text-cyan-400 text-xs px-2 py-0.5 rounded-lg bg-cyan-400/10">
+                      {selectedEvent.instrutor}
+                    </span>
+                  </div>
                 )}
 
                 {/* Criado por */}

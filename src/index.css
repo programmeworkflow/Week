@@ -24,10 +24,10 @@
     --secondary-foreground: 222 47% 20%;
 
     --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted-foreground: 215 20% 35%;
 
     --accent: 142 76% 94%;
-    --accent-foreground: 142 72% 20%;
+    --accent-foreground: 142 72% 16%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -73,7 +73,7 @@
 
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 215 16% 47%;
+    --sidebar-foreground: 215 20% 35%;
     --sidebar-primary: 142 72% 29%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 142 76% 94%;
@@ -365,8 +365,11 @@
 }
 
 /* Neon text glow */
-.neon-text {
+.dark .neon-text {
   text-shadow: 0 0 10px hsl(var(--primary) / 0.5), 0 0 20px hsl(var(--primary) / 0.3);
+}
+.neon-text {
+  color: hsl(var(--foreground));
 }
 
 /* Sidebar collapsed responsive margin */
