@@ -494,8 +494,8 @@ const TecnicoSpreadsheet = () => {
 };
 
 // Default list for non-tecnico sectors
-const DefaultProjectList = ({ sector }: { sector?: string }) => {
-  const { projects, users } = useProjects();
+const DefaultProjectList = ({ sector, comercialStatusLabels, comercialStatusColors }: { sector?: string; comercialStatusLabels?: Record<string, string>; comercialStatusColors?: Record<string, string> }) => {
+  const { projects, users, updateProjectStatus } = useProjects();
   const navigate = useNavigate();
 
   const sectorProjects = sector ? projects.filter((p) => p.sector === sector) : projects;
@@ -520,11 +520,26 @@ const DefaultProjectList = ({ sector }: { sector?: string }) => {
               className={cn("border-b border-border/50 hover:bg-accent/30 cursor-pointer transition-colors", idx % 2 === 0 ? "" : "bg-muted/20")}
             >
               <td className="px-4 py-3 text-sm font-medium text-foreground">{p.project_name}</td>
-              <td className="px-4 py-3">
-                <span className="flex items-center gap-1.5">
-                  <span className={cn("w-2 h-2 rounded-full", statusDotColors[p.status])} />
-                  <span className="text-xs text-foreground">{statusLabels[p.status]}</span>
-                </span>
+              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                {comercialStatusLabels ? (
+                  <Select value={p.status} onValueChange={(v) => updateProjectStatus(p.id, v as any)}>
+                    <SelectTrigger className={cn("h-8 text-[11px] rounded-lg border-0 font-medium w-44", comercialStatusColors?.[p.status] || "")}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(comercialStatusLabels).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>
+                          <span className={cn("px-1.5 py-0.5 rounded text-xs", comercialStatusColors?.[key] || "")}>{label}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <span className="flex items-center gap-1.5">
+                    <span className={cn("w-2 h-2 rounded-full", statusDotColors[p.status])} />
+                    <span className="text-xs text-foreground">{statusLabels[p.status]}</span>
+                  </span>
+                )}
               </td>
               <td className="px-4 py-3">
                 <div className="flex -space-x-1">
@@ -548,11 +563,28 @@ const DefaultProjectList = ({ sector }: { sector?: string }) => {
   );
 };
 
+const comercialStatusLabels: Record<string, string> = {
+  not_authenticated: "Enviar a proposta",
+  not_started: "Marcar a data",
+  pending: "Designar instrutor",
+  done: "Emitir certificado",
+};
+
+const comercialStatusColors: Record<string, string> = {
+  not_authenticated: "status-critico",
+  not_started: "status-nao-iniciado",
+  pending: "status-andamento",
+  done: "status-concluido",
+};
+
 const ProjectList = () => {
   const { sector } = useParams<{ sector?: string }>();
   const { canAccessSector } = useAuth();
-  const title = sector ? `Projetos - ${getSectorTitle(sector)}` : "Todos os Projetos";
   const isTecnico = sector === "tecnico";
+  const isComercial = sector === "comercial";
+  const title = isComercial
+    ? `Treinamentos - ${getSectorTitle(sector)}`
+    : sector ? `Projetos - ${getSectorTitle(sector)}` : "Todos os Projetos";
 
   if (sector && !canAccessSector(sector as Sector)) {
     return <Navigate to="/dashboard/projects" replace />;
@@ -566,7 +598,7 @@ const ProjectList = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground">{title}</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {isTecnico ? "Planilha editável do setor técnico" : "Lista de projetos do setor"}
+              {isTecnico ? "Planilha editável do setor técnico" : isComercial ? "Planilha de treinamentos integrada com o quadro" : "Lista de projetos do setor"}
             </p>
           </div>
           <div className="flex gap-2">
@@ -574,7 +606,7 @@ const ProjectList = () => {
           </div>
         </div>
 
-        {isTecnico ? <TecnicoSpreadsheet /> : <DefaultProjectList sector={sector} />}
+        {isTecnico ? <TecnicoSpreadsheet /> : <DefaultProjectList sector={sector} comercialStatusLabels={isComercial ? comercialStatusLabels : undefined} comercialStatusColors={isComercial ? comercialStatusColors : undefined} />}
       </main>
     </div>
   );

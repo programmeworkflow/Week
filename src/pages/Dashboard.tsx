@@ -816,41 +816,8 @@ const Dashboard = () => {
               })}
             </div>
 
-            {/* Renovação Board - Técnico only */}
-            {isTecnico && !isGeneralDashboard && (
-              <div className="mt-10 animate-fade-in">
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-7 h-7 rounded-[10px] bg-orange-400/10 flex items-center justify-center">
-                    <RefreshCw className="w-3.5 h-3.5 text-orange-400 stroke-[1.5]" />
-                  </div>
-                  <h2 className="text-[15px] font-semibold text-foreground">Renovação</h2>
-                  <span className="text-[10px] text-muted-foreground">(renovações e pendências)</span>
-                </div>
-                <div className={`bg-card rounded-[12px] border p-5 neon-card shadow-[0_0_15px_rgba(251,146,60,0.15)] border-orange-400/20`}>
-                  <div className="flex gap-5 overflow-x-auto pb-2 snap-x snap-mandatory md:snap-none">
-                    {renovacaoColumns.map((col) => {
-                      const colCards = renovacaoAsProjects.filter((p) => p.status === col.status);
-                      return (
-                        <PaginatedKanbanColumn
-                          key={`ren-${col.status}`}
-                          col={{ title: col.title, status: col.status as any }}
-                          projects={colCards}
-                          users={users}
-                          onDrop={handleRenovacaoDrop}
-                          locked={false}
-                          extraClass={renovacaoColumnColors[col.status] || ""}
-                          maxCards={MAX_CARDS_VARIAVEIS}
-                          onViewAll={handleViewAll}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Renovation Board - Other sectors */}
-            {!isTecnico && (
+            {/* Renovation Board - Other sectors (not técnico, not comercial) */}
+            {!isTecnico && !isComercial && !isPsicossocial && (
               <div className="mt-10 animate-fade-in">
                 <div className="flex items-center gap-2.5 mb-4">
                   <div className="w-7 h-7 rounded-[10px] status-revisao flex items-center justify-center">
