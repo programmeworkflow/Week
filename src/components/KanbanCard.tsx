@@ -23,38 +23,41 @@ export const KanbanCard = ({ project, users, index, locked, onCardClick, renderE
     startX: 0, startY: 0, el: null, clone: null, dragging: false,
   });
 
-  const scrollIntervalRef = useRef<number | null>(null);
+  const dragMouseY = useRef(0);
+  const rafId = useRef(0);
+  const dragging = useRef(false);
 
-  const startAutoScroll = () => {
-    const handler = (e: DragEvent) => {
-      const threshold = 80;
-      const speed = 15;
-      const y = e.clientY;
-      const h = window.innerHeight;
-      if (y < threshold) {
-        window.scrollBy(0, -speed);
-      } else if (y > h - threshold) {
-        window.scrollBy(0, speed);
-      }
-    };
-    document.addEventListener("dragover", handler);
-    return handler;
+  const scrollLoop = () => {
+    if (!dragging.current) return;
+    const threshold = 100;
+    const y = dragMouseY.current;
+    const h = window.innerHeight;
+    if (y > 0 && y < threshold) {
+      const intensity = 1 - y / threshold;
+      window.scrollBy(0, -Math.round(intensity * 20));
+    } else if (y > h - threshold && y < h) {
+      const intensity = 1 - (h - y) / threshold;
+      window.scrollBy(0, Math.round(intensity * 20));
+    }
+    rafId.current = requestAnimationFrame(scrollLoop);
   };
+
+  const trackMouse = (e: DragEvent) => { dragMouseY.current = e.clientY; };
 
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData("projectId", project.id);
     e.currentTarget.classList.add("opacity-40");
-    const handler = startAutoScroll();
-    (e.currentTarget as any)._autoScrollHandler = handler;
+    dragging.current = true;
+    dragMouseY.current = e.clientY;
+    document.addEventListener("dragover", trackMouse);
+    rafId.current = requestAnimationFrame(scrollLoop);
   };
 
   const handleDragEnd = (e: React.DragEvent) => {
     e.currentTarget.classList.remove("opacity-40");
-    const handler = (e.currentTarget as any)._autoScrollHandler;
-    if (handler) {
-      document.removeEventListener("dragover", handler);
-      delete (e.currentTarget as any)._autoScrollHandler;
-    }
+    dragging.current = false;
+    cancelAnimationFrame(rafId.current);
+    document.removeEventListener("dragover", trackMouse);
   };
 
   const handleClick = () => {
