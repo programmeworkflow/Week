@@ -309,7 +309,7 @@ export const AppSidebar = () => {
                   collapsed && "justify-center px-2"
                 )}
               >
-                <Trophy className="w-[18px] h-[18px] flex-shrink-0 stroke-[1.5] text-yellow-400" />
+                <Trophy className="w-[18px] h-[18px] flex-shrink-0 stroke-[1.5] text-yellow-800 dark:text-yellow-400" />
                 {!collapsed && <span>Premiação</span>}
               </Link>
             </TooltipTrigger>
