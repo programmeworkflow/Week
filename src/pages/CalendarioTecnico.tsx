@@ -209,20 +209,21 @@ const CalendarioTecnico = () => {
                   if (events.length > 0) setSelectedEvent(events[0]);
                 }}
                 className={cn(
-                  "relative h-14 text-xs rounded-lg transition-all duration-200",
+                  "relative h-14 text-xs rounded-xl transition-all duration-200",
                   inMonth ? "text-foreground hover:bg-muted" : "text-muted-foreground/30",
-                  isToday(day) && "bg-primary/10 font-semibold text-primary",
-                  events.length > 0 && "cursor-pointer neon-hover"
+                  isToday(day) && !events.length && "bg-primary/10 font-semibold text-primary",
+                  events.length > 0 && "cursor-pointer ring-2 ring-primary/50 bg-primary/15 font-bold text-primary dark:shadow-[0_0_12px_rgba(34,197,94,0.3)]",
+                  events.length > 0 && isToday(day) && "ring-primary bg-primary/25"
                 )}
               >
-                <span className="block">{format(day, "d")}</span>
+                <span className="block text-[13px]">{format(day, "d")}</span>
                 {events.length > 0 && (
                   <div className="flex justify-center items-center gap-0.5 mt-0.5">
                     {events.map((ev) => (
                       <div key={ev.id} className="flex items-center gap-[2px]">
                         <span
                           className={cn(
-                            "w-1.5 h-1.5 rounded-full",
+                            "w-2.5 h-2.5 rounded-full",
                             getTipoColor(ev.tipo)
                           )}
                         />
@@ -506,6 +507,24 @@ const CalendarioTecnico = () => {
                     {selectedEvent.criadoPor}
                   </span>
                 </div>
+
+                {/* Google Calendar */}
+                <Button
+                  variant="outline"
+                  className="w-full h-8 rounded-lg text-xs gap-1.5 border-blue-400/30 text-blue-600 dark:text-blue-400 hover:bg-blue-400/10"
+                  onClick={() => {
+                    const ev = selectedEvent;
+                    const dateStr = format(ev.data, "yyyyMMdd");
+                    const start = ev.horaInicio && ev.horaInicio !== "A confirmar" ? ev.horaInicio.replace(":", "") + "00" : "080000";
+                    const end = ev.horaFim ? ev.horaFim.replace(":", "") + "00" : "120000";
+                    const title = encodeURIComponent(`${getTipoLabel(ev.tipo)}${ev.instrutor ? ` - ${ev.instrutor}` : ""}`);
+                    const details = encodeURIComponent(`Criado por: ${ev.criadoPor}${ev.instrutor ? `\nInstrutor: ${ev.instrutor}` : ""}\nOrigem: MedWork`);
+                    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}T${start}/${dateStr}T${end}&details=${details}`;
+                    window.open(url, "_blank");
+                  }}
+                >
+                  <CalendarIcon className="w-3 h-3" /> Adicionar ao Google Calendar
+                </Button>
 
                 <div className="flex gap-2 pt-3 border-t border-border">
                   <Button variant="outline" onClick={() => openEdit(selectedEvent)} className="flex-1 h-8 rounded-lg text-xs gap-1 btn-3d neon-hover animate-float">

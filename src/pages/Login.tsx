@@ -20,7 +20,7 @@ const Login = () => {
     setError("");
     const success = await login(email, password);
     if (success) {
-      navigate("/dashboard/projects");
+      navigate("/profile");
     } else {
       setError("Credenciais inválidas. Verifique email e senha.");
     }
