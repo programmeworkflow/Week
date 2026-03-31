@@ -21,36 +21,36 @@
     --primary-glow: 142 60% 35%;
 
     --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 20%;
+    --secondary-foreground: 222 47% 15%;
 
     --muted: 210 40% 96%;
-    --muted-foreground: 215 20% 35%;
+    --muted-foreground: 220 15% 25%;
 
     --accent: 142 76% 94%;
-    --accent-foreground: 142 72% 16%;
+    --accent-foreground: 142 72% 14%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
+    --border: 214 32% 85%;
+    --input: 214 32% 85%;
     --ring: 142 72% 29%;
 
     --radius: 0.75rem;
 
     /* Status — design system tokens */
     --status-nao-iniciado: 229 84% 90%;
-    --status-nao-iniciado-text: 243 75% 41%;
+    --status-nao-iniciado-text: 243 75% 30%;
     --status-pendente: 48 96% 89%;
-    --status-pendente-text: 28 80% 29%;
+    --status-pendente-text: 28 80% 22%;
     --status-andamento: 214 95% 93%;
-    --status-andamento-text: 221 83% 53%;
+    --status-andamento-text: 221 83% 40%;
     --status-revisao: 270 95% 93%;
-    --status-revisao-text: 272 72% 40%;
+    --status-revisao-text: 272 72% 30%;
     --status-concluido: 142 76% 94%;
-    --status-concluido-text: 143 64% 24%;
+    --status-concluido-text: 143 64% 18%;
     --status-critico: 0 93% 94%;
-    --status-critico-text: 0 74% 35%;
+    --status-critico-text: 0 74% 30%;
 
     /* Legacy compat */
     --status-not-authenticated: 0 72% 51%;
@@ -73,11 +73,11 @@
 
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 215 20% 35%;
+    --sidebar-foreground: 220 15% 20%;
     --sidebar-primary: 142 72% 29%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 142 76% 94%;
-    --sidebar-accent-foreground: 142 72% 20%;
+    --sidebar-accent: 142 76% 92%;
+    --sidebar-accent-foreground: 142 72% 14%;
     --sidebar-border: 214 32% 91%;
     --sidebar-ring: 142 72% 29%;
   }
