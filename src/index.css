@@ -252,7 +252,7 @@
   animation: float 3s ease-in-out infinite;
 }
 
-.animate-neon-pulse {
+.dark .animate-neon-pulse {
   animation: neon-pulse 2s ease-in-out infinite;
 }
 
@@ -260,99 +260,73 @@
   animation: celebration-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-/* Neon glow effect on hover */
-.neon-hover {
+/* === SHARED transitions === */
+.neon-hover, .neon-active, .gradient-hover, .btn-3d, .neon-column, .neon-sidebar-link, .neon-card {
   transition: all 0.3s ease;
 }
-.neon-hover:hover {
+
+/* === LIGHT MODE: clean, no glow === */
+.neon-hover:hover { border-color: hsl(var(--primary) / 0.3); }
+.neon-active { border-color: hsl(var(--primary) / 0.2); }
+.gradient-hover { position: relative; overflow: hidden; }
+.gradient-hover::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, hsl(var(--primary) / 0.05), transparent); opacity: 0; transition: opacity 0.3s; pointer-events: none; border-radius: inherit; z-index: 0; }
+.gradient-hover:hover::before { opacity: 1; }
+.gradient-hover > * { position: relative; z-index: 1; }
+.btn-3d { transform: translateY(0); box-shadow: 0 2px 0 hsl(var(--primary) / 0.2), 0 3px 8px rgba(0,0,0,0.08); }
+.btn-3d:hover { transform: translateY(-2px); box-shadow: 0 4px 0 hsl(var(--primary) / 0.2), 0 6px 12px rgba(0,0,0,0.12); }
+.btn-3d:active { transform: translateY(1px); box-shadow: 0 1px 0 hsl(var(--primary) / 0.2), 0 2px 4px rgba(0,0,0,0.06); }
+.neon-column { border: 1px solid hsl(var(--border)); }
+.neon-column:hover { border-color: hsl(var(--primary) / 0.2); box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+.neon-sidebar-link { position: relative; }
+.neon-sidebar-link:hover { background: hsl(var(--muted)); }
+.neon-sidebar-link.active { background: hsl(var(--accent)); }
+.neon-card { border: 1px solid hsl(var(--border)); }
+.neon-card:hover { border-color: hsl(var(--primary) / 0.2); box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+
+/* === DARK MODE: full neon glow === */
+.dark .neon-hover:hover {
   box-shadow: 0 0 10px hsl(var(--primary) / 0.5), 0 0 20px hsl(var(--primary) / 0.25), 0 0 40px hsl(var(--primary) / 0.1);
   border-color: hsl(var(--primary) / 0.6);
 }
-
-/* Neon glow always-on (for active states) */
-.neon-active {
+.dark .neon-active {
   box-shadow: 0 0 8px hsl(var(--primary) / 0.4), 0 0 16px hsl(var(--primary) / 0.2);
   border-color: hsl(var(--primary) / 0.4);
 }
-
-/* Gradient hover effect for cards */
-.gradient-hover {
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
-.gradient-hover::before {
-  content: '';
-  position: absolute;
-  inset: 0;
+.dark .gradient-hover::before {
   background: linear-gradient(135deg, hsl(var(--primary) / 0.12), hsl(142 80% 50% / 0.06), hsl(200 80% 50% / 0.12));
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  border-radius: inherit;
-  z-index: 0;
 }
-.gradient-hover:hover::before {
-  opacity: 1;
-}
-.gradient-hover > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* 3D Button effect */
-.btn-3d {
+.dark .btn-3d {
   transform: translateY(0) perspective(500px) rotateX(0);
   box-shadow: 0 4px 0 hsl(var(--primary) / 0.5), 0 6px 14px rgba(0, 0, 0, 0.2);
-  transition: all 0.2s ease;
 }
-.btn-3d:hover {
+.dark .btn-3d:hover {
   transform: translateY(-3px) perspective(500px) rotateX(2deg);
   box-shadow: 0 7px 0 hsl(var(--primary) / 0.5), 0 10px 20px rgba(0, 0, 0, 0.25), 0 0 15px hsl(var(--primary) / 0.3);
 }
-.btn-3d:active {
+.dark .btn-3d:active {
   transform: translateY(2px) perspective(500px) rotateX(-1deg);
   box-shadow: 0 2px 0 hsl(var(--primary) / 0.5), 0 3px 6px rgba(0, 0, 0, 0.15);
 }
-
-/* Neon border glow for columns */
-.neon-column {
-  transition: all 0.3s ease;
-  border: 1px solid hsl(var(--border));
-}
-.neon-column:hover {
+.dark .neon-column:hover {
   border-color: hsl(var(--primary) / 0.4);
   box-shadow: inset 0 0 30px hsl(var(--primary) / 0.06), 0 0 20px hsl(var(--primary) / 0.12);
 }
-
-/* Neon input focus */
-.neon-input:focus {
-  box-shadow: 0 0 10px hsl(var(--primary) / 0.3), 0 0 20px hsl(var(--primary) / 0.1);
-  border-color: hsl(var(--primary) / 0.5);
-}
-
-/* Neon sidebar link */
-.neon-sidebar-link {
-  transition: all 0.3s ease;
-  position: relative;
-}
-.neon-sidebar-link:hover {
+.dark .neon-sidebar-link:hover {
   box-shadow: 0 0 8px hsl(var(--primary) / 0.3), 0 0 16px hsl(var(--primary) / 0.15);
   background: linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.05));
 }
-.neon-sidebar-link.active {
+.dark .neon-sidebar-link.active {
   box-shadow: 0 0 10px hsl(var(--primary) / 0.4), 0 0 20px hsl(var(--primary) / 0.2);
   background: linear-gradient(135deg, hsl(var(--primary) / 0.15), hsl(var(--primary) / 0.08));
 }
-
-/* Neon card with subtle glow */
-.neon-card {
-  transition: all 0.3s ease;
-  border: 1px solid hsl(var(--border));
-}
-.neon-card:hover {
+.dark .neon-card:hover {
   border-color: hsl(var(--primary) / 0.3);
   box-shadow: 0 4px 20px hsl(var(--primary) / 0.1), 0 0 10px hsl(var(--primary) / 0.08);
+}
+
+/* Neon input focus - dark only */
+.dark input:focus {
+  box-shadow: 0 0 10px hsl(var(--primary) / 0.3);
 }
 
 /* Confetti particles */

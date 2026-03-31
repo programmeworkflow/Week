@@ -287,6 +287,7 @@ const DiretoriaBoard = ({
 // Inline spreadsheet for Cremonese/Engetins
 const TreinamentoTable = ({ grupo }: { grupo: string }) => {
   const { treinamentoRows, addTreinamentoRow, updateTreinamentoRow, deleteTreinamentoRow, users } = useProjects();
+  const { user: currentUser } = useAuth();
   const rows = treinamentoRows.filter((r) => r.grupo === grupo);
   const [adding, setAdding] = useState(false);
   const [newRow, setNewRow] = useState({ treinamento: "", data: "", aluno: "", instrutor: "" });
@@ -303,13 +304,13 @@ const TreinamentoTable = ({ grupo }: { grupo: string }) => {
           id: String(Date.now()),
           sector: "tecnico",
           data: isoDate,
-          hora_inicio: "08:00",
-          hora_fim: "12:00",
+          hora_inicio: "A confirmar",
+          hora_fim: "",
           tipo: "treinamento",
           usar_carro: false,
           tipo_carro: "",
           usar_data_show: false,
-          criado_por: `${grupo}`,
+          criado_por: currentUser?.full_name || grupo,
           instrutor: newRow.instrutor || "",
           origem: grupo.toLowerCase(),
         });
