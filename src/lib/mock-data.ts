@@ -2,7 +2,7 @@ export type Sector = "tecnico" | "comercial" | "saude" | "financeiro" | "psicoss
 
 export const SECTORS: { id: Sector; label: string }[] = [
   { id: "tecnico", label: "Setor Técnico" },
-  { id: "comercial", label: "Comercial" },
+  { id: "comercial", label: "Comercial/Treinamentos" },
   { id: "saude", label: "Saúde" },
   { id: "financeiro", label: "Financeiro" },
   { id: "psicossocial", label: "Psicossocial" },

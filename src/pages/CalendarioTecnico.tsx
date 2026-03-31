@@ -130,14 +130,14 @@ const CalendarioTecnico = () => {
 
   const getTipoColor = (tipo: string) => {
     if (tipo === "reuniao") return "bg-red-500";
-    if (tipo === "compromisso") return "bg-purple-400";
+    if (tipo === "visita") return "bg-purple-400";
     if (tipo === "treinamento") return "bg-[hsl(var(--status-andamento-text))]";
     return "bg-orange-500"; // visita
   };
 
   const getTipoLabel = (tipo: string) => {
     if (tipo === "reuniao") return "Reunião";
-    if (tipo === "compromisso") return "Compromisso";
+    if (tipo === "visita") return "Visita Técnica";
     if (tipo === "treinamento") return "Treinamento";
     return "Visita Técnica";
   };
@@ -229,7 +229,7 @@ const CalendarioTecnico = () => {
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-purple-400" />
-                <span className="text-[10px] text-muted-foreground">Compromisso</span>
+                <span className="text-[10px] text-muted-foreground">Visita Técnica</span>
               </div>
             </>
           )}
@@ -352,7 +352,7 @@ const CalendarioTecnico = () => {
                   <SelectTrigger className="h-9 rounded-lg text-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="reuniao">Reunião</SelectItem>
-                    <SelectItem value="compromisso">Compromisso</SelectItem>
+                    <SelectItem value="visita">Visita Técnica</SelectItem>
                   </SelectContent>
                 </Select>
               )}

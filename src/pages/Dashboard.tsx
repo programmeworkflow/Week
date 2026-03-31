@@ -48,6 +48,20 @@ const variavelColumns: { title: string; status: Project["status"] }[] = [
   { title: "Finalizada", status: "done" },
 ];
 
+const comercialColumns: { title: string; status: Project["status"] }[] = [
+  { title: "Enviar proposta", status: "not_authenticated" },
+  { title: "Fazer o contrato", status: "not_started" },
+  { title: "Criar a pasta e os espelhos", status: "pending" },
+  { title: "Finalizada", status: "done" },
+];
+
+const treinamentoColumns: { title: string; status: Project["status"] }[] = [
+  { title: "Enviar a proposta", status: "not_authenticated" },
+  { title: "Marcar a data", status: "not_started" },
+  { title: "Designar instrutor", status: "pending" },
+  { title: "Emitir certificado", status: "done" },
+];
+
 const diretoriaColumns: { title: string; status: Project["status"] }[] = [
   { title: "Demanda não iniciada", status: "not_authenticated" },
   { title: "Demanda verificada", status: "not_started" },
@@ -303,6 +317,7 @@ const Dashboard = () => {
   const isDiretoria = sector === "diretoria";
   const isTecnico = sector === "tecnico";
   const isPsicossocial = sector === "psicossocial";
+  const isComercial = sector === "comercial";
 
   if (sector && !canAccessSector(sector as Sector)) {
     return <Navigate to="/dashboard/projects" replace />;
@@ -396,6 +411,7 @@ const Dashboard = () => {
   const getColumnsForSector = () => {
     if (isTecnico) return tecnicoColumns;
     if (isPsicossocial) return psicossocialColumns;
+    if (isComercial) return treinamentoColumns;
     if (isDiretoria) return diretoriaColumns;
     return mainColumns;
   };
@@ -719,7 +735,38 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* Quadro Fixos (Main Board) */}
+            {/* Quadro Comercial - above Treinamentos */}
+            {isComercial && !isGeneralDashboard && (
+              <div className="mb-10 animate-fade-in">
+                <div className="flex items-center gap-2.5 mb-4">
+                  <div className="w-7 h-7 rounded-[10px] bg-amber-400/10 flex items-center justify-center">
+                    <Layers className="w-3.5 h-3.5 text-amber-400 stroke-[1.5]" />
+                  </div>
+                  <h2 className="text-[15px] font-semibold text-foreground">Quadro Comercial</h2>
+                </div>
+                <div className={`bg-card rounded-[12px] border p-5 neon-card ${sectorNeonColors["comercial"] || ""}`}>
+                  <div className="flex gap-5 overflow-x-auto pb-2 snap-x snap-mandatory md:snap-none">
+                    {comercialColumns.map((col) => {
+                      const colProjects = projects.filter((p) => p.sector === "comercial" && p.is_renovation && p.status === col.status);
+                      return (
+                        <PaginatedKanbanColumn
+                          key={`com-${col.status}`}
+                          col={col}
+                          projects={colProjects}
+                          users={users}
+                          onDrop={handleDrop}
+                          locked={isGeneralDashboard}
+                          maxCards={10}
+                          onViewAll={handleViewAll}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Quadro Fixos / Empresas / Treinamentos (Main Board) */}
             {isTecnico && !isGeneralDashboard && (
               <div className="flex items-center gap-2.5 mb-4">
                 <div className="w-7 h-7 rounded-[10px] bg-primary/10 flex items-center justify-center">
@@ -727,6 +774,15 @@ const Dashboard = () => {
                 </div>
                 <h2 className="text-[15px] font-semibold text-foreground">Empresas</h2>
                 <span className="text-[10px] text-muted-foreground">(clientes fixos da empresa)</span>
+              </div>
+            )}
+            {isComercial && !isGeneralDashboard && (
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="w-7 h-7 rounded-[10px] bg-amber-400/10 flex items-center justify-center">
+                  <Layers className="w-3.5 h-3.5 text-amber-400 stroke-[1.5]" />
+                </div>
+                <h2 className="text-[15px] font-semibold text-foreground">Quadro Treinamentos</h2>
+                <span className="text-[10px] text-muted-foreground">(integrado com Treinamentos)</span>
               </div>
             )}
 
