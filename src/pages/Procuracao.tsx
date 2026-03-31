@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, FileCheck, Download, Upload } from "lucide-react";
+import { Plus, Trash2, FileCheck, Download, Upload, Filter, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCNPJ, formatTelefone } from "@/lib/formatters";
 import * as XLSX from "xlsx";
@@ -78,6 +78,32 @@ const Procuracao = () => {
 
   const [page, setPage] = useState(1);
   const PER_PAGE = 50;
+
+  // Filters
+  const [showFilters, setShowFilters] = useState(false);
+  const [fEmpresa, setFEmpresa] = useState("");
+  const [fCnpj, setFCnpj] = useState("");
+  const [fSituacao, setFSituacao] = useState("all");
+  const [fContrato, setFContrato] = useState("");
+  const [fEmail, setFEmail] = useState("");
+  const [fTelefone, setFTelefone] = useState("");
+  const [fProcuracao, setFProcuracao] = useState("");
+  const [fContabilidade, setFContabilidade] = useState("");
+
+  const hasFilters = fEmpresa || fCnpj || fSituacao !== "all" || fContrato || fEmail || fTelefone || fProcuracao || fContabilidade;
+  const clearFilters = () => { setFEmpresa(""); setFCnpj(""); setFSituacao("all"); setFContrato(""); setFEmail(""); setFTelefone(""); setFProcuracao(""); setFContabilidade(""); setPage(1); };
+
+  const filteredRows = rows.filter(r => {
+    if (fEmpresa && !r.empresa.toLowerCase().includes(fEmpresa.toLowerCase())) return false;
+    if (fCnpj && !r.cnpj_cpf.toLowerCase().includes(fCnpj.toLowerCase())) return false;
+    if (fSituacao !== "all" && r.situacao !== (fSituacao === "vazio" ? "" : fSituacao)) return false;
+    if (fContrato && !r.contrato.toLowerCase().includes(fContrato.toLowerCase())) return false;
+    if (fEmail && !r.email.toLowerCase().includes(fEmail.toLowerCase())) return false;
+    if (fTelefone && !r.telefone.toLowerCase().includes(fTelefone.toLowerCase())) return false;
+    if (fProcuracao && !r.procuracao_vencimento.includes(fProcuracao)) return false;
+    if (fContabilidade && !r.contabilidade.toLowerCase().includes(fContabilidade.toLowerCase())) return false;
+    return true;
+  });
 
   useEffect(() => {
     const load = async () => {
@@ -196,6 +222,10 @@ const Procuracao = () => {
             <p className="text-muted-foreground text-sm mt-1">Controle de procurações e situações</p>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowFilters(!showFilters)} className={cn("gap-1.5 text-xs rounded-lg h-9", hasFilters && "border-primary text-primary")}>
+              <Filter className="w-3.5 h-3.5" /> Filtros {hasFilters && `(${filteredRows.length})`}
+            </Button>
+            {hasFilters && <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 text-xs text-muted-foreground"><X className="w-3.5 h-3.5" /></Button>}
             <Button variant="outline" onClick={exportExcel} className="gap-1.5 text-xs rounded-lg h-9 btn-3d neon-hover animate-float">
               <Download className="w-3.5 h-3.5" /> Exportar Excel
             </Button>
@@ -208,6 +238,54 @@ const Procuracao = () => {
             </Button>
           </div>
         </div>
+
+        {showFilters && (
+          <div className="bg-card rounded-xl border border-border p-4 mb-4 animate-fade-in">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Empresa</label>
+                <Input value={fEmpresa} onChange={(e) => { setFEmpresa(e.target.value); setPage(1); }} placeholder="Buscar..." className="h-8 text-xs rounded-lg" />
+              </div>
+              <div>
+                <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">CNPJ/CPF</label>
+                <Input value={fCnpj} onChange={(e) => { setFCnpj(e.target.value); setPage(1); }} placeholder="Buscar..." className="h-8 text-xs rounded-lg" />
+              </div>
+              <div>
+                <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Situação</label>
+                <Select value={fSituacao} onValueChange={(v) => { setFSituacao(v); setPage(1); }}>
+                  <SelectTrigger className="h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="vazio">Em branco</SelectItem>
+                    <SelectItem value="Aguardando resposta">Aguardando resposta</SelectItem>
+                    <SelectItem value="Expirada">Expirada</SelectItem>
+                    <SelectItem value="Ativa">Ativa</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Contrato</label>
+                <Input value={fContrato} onChange={(e) => { setFContrato(e.target.value); setPage(1); }} placeholder="Buscar..." className="h-8 text-xs rounded-lg" />
+              </div>
+              <div>
+                <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">E-mail</label>
+                <Input value={fEmail} onChange={(e) => { setFEmail(e.target.value); setPage(1); }} placeholder="Buscar..." className="h-8 text-xs rounded-lg" />
+              </div>
+              <div>
+                <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Telefone</label>
+                <Input value={fTelefone} onChange={(e) => { setFTelefone(e.target.value); setPage(1); }} placeholder="Buscar..." className="h-8 text-xs rounded-lg" />
+              </div>
+              <div>
+                <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Procuração</label>
+                <Input value={fProcuracao} onChange={(e) => { setFProcuracao(e.target.value); setPage(1); }} placeholder="dd/mm/aaaa" className="h-8 text-xs rounded-lg" />
+              </div>
+              <div>
+                <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Contabilidade</label>
+                <Input value={fContabilidade} onChange={(e) => { setFContabilidade(e.target.value); setPage(1); }} placeholder="Buscar..." className="h-8 text-xs rounded-lg" />
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="bg-card rounded-2xl border border-border overflow-hidden neon-card overflow-x-auto">
           <table className="w-full min-w-[1100px]">
@@ -225,7 +303,7 @@ const Procuracao = () => {
               </tr>
             </thead>
             <tbody>
-              {rows.slice((page - 1) * PER_PAGE, page * PER_PAGE).map((r, i) => (
+              {filteredRows.slice((page - 1) * PER_PAGE, page * PER_PAGE).map((r, i) => (
                 <tr key={r.id} className={cn("border-b border-border/50 hover:bg-accent/30 transition-colors", i % 2 === 0 ? "" : "bg-muted/20")}>
                   <td className="px-3 py-1.5">
                     <Input value={r.empresa} onChange={(e) => updateRow(r.id, { empresa: e.target.value })} className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
@@ -299,7 +377,7 @@ const Procuracao = () => {
                   </td>
                 </tr>
               )}
-              {rows.length === 0 && !adding && (
+              {filteredRows.length === 0 && !adding && (
                 <tr><td colSpan={9} className="text-center py-8 text-sm text-muted-foreground">Nenhuma procuração cadastrada.</td></tr>
               )}
             </tbody>
@@ -307,12 +385,12 @@ const Procuracao = () => {
         </div>
 
         {/* Pagination */}
-        {rows.length > PER_PAGE && (
+        {filteredRows.length > PER_PAGE && (
           <div className="flex items-center justify-between mt-3 px-1">
-            <span className="text-xs text-muted-foreground">{rows.length} registros — página {page} de {Math.ceil(rows.length / PER_PAGE)}</span>
+            <span className="text-xs text-muted-foreground">{filteredRows.length} registros — página {page} de {Math.ceil(filteredRows.length / PER_PAGE)}</span>
             <div className="flex gap-1">
               <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="h-7 text-xs rounded-lg px-3">Anterior</Button>
-              <Button variant="outline" size="sm" disabled={page >= Math.ceil(rows.length / PER_PAGE)} onClick={() => setPage(p => p + 1)} className="h-7 text-xs rounded-lg px-3">Próxima</Button>
+              <Button variant="outline" size="sm" disabled={page >= Math.ceil(filteredRows.length / PER_PAGE)} onClick={() => setPage(p => p + 1)} className="h-7 text-xs rounded-lg px-3">Próxima</Button>
             </div>
           </div>
         )}

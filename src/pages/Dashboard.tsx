@@ -781,7 +781,7 @@ const Dashboard = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8 animate-fade-in">
           <h1 className="text-lg font-semibold text-foreground neon-text">{boardTitle}</h1>
-          {!isGeneralDashboard && !isDiretoria && (
+          {!isGeneralDashboard && (
             <div className="flex items-center gap-2">
               {isTecnico ? (
                 <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-1.5">
