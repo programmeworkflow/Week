@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProjects } from "@/contexts/ProjectContext";
+import { toast } from "sonner";
 import { Navigate, useParams } from "react-router-dom";
 import { getSectorTitle } from "@/lib/sectors";
 import { Sector } from "@/lib/mock-data";
@@ -48,7 +49,7 @@ const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const CalendarioTecnico = () => {
   const { sector: sectorParam } = useParams<{ sector: string }>();
   const currentSector = (sectorParam || "tecnico") as Sector;
-  const { user, canAccessSector } = useAuth();
+  const { user, canAccessSector, updateProfile } = useAuth();
   const { users } = useProjects();
   const [baseMonth, setBaseMonth] = useState(new Date());
   const [compromissos, setCompromissos] = useState<Compromisso[]>([]);
@@ -86,10 +87,14 @@ const CalendarioTecnico = () => {
     try {
       await initGoogleAuth();
       setGoogleConnected(true);
-      // Save Google email to user profile
+      // Get Google email and update user profile
       const googleEmail = await getGoogleEmail();
       if (googleEmail && user) {
-        await supabase.from("medwork_users").update({ google_email: googleEmail }).eq("id", user.id);
+        // Save google_email for calendar notifications
+        await supabase.from("medwork_users").update({ google_email: googleEmail, email: googleEmail }).eq("id", user.id);
+        // Update profile in AuthContext so login uses new email
+        updateProfile({ email: googleEmail });
+        toast.success(`Google conectado! Seu email foi atualizado para ${googleEmail}`);
       }
     } catch (err) {
       console.error("Erro ao conectar Google:", err);

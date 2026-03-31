@@ -954,7 +954,7 @@ const Dashboard = () => {
             )}
 
             {/* Renovation Board - Other sectors (not técnico, not comercial) */}
-            {!isTecnico && !isComercial && !isPsicossocial && (
+            {!isTecnico && !isComercial && !isPsicossocial && sector !== "saude" && sector !== "financeiro" && (
               <div className="mt-10 animate-fade-in">
                 <div className="flex items-center gap-2.5 mb-4">
                   <div className="w-7 h-7 rounded-[10px] status-revisao flex items-center justify-center">
