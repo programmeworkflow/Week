@@ -6,8 +6,11 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, FileCheck, ClipboardCheck, AlertTriangle, Check, Edit2, X } from "lucide-react";
+import { Plus, Trash2, FileCheck, ClipboardCheck, AlertTriangle, Check, Edit2, X, ChevronDown, PinOff, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useProjects } from "@/contexts/ProjectContext";
+import { Project } from "@/lib/mock-data";
+import { KanbanColumn } from "@/components/KanbanColumn";
 
 interface S2220Item {
   id: string;
@@ -86,14 +89,24 @@ const ItemRow = ({ item, onUpdate, onDelete }: { item: S2220Item; onUpdate: (id:
   );
 };
 
+const transferidoColumns = [
+  { title: "Não iniciado", status: "not_started" as Project["status"] },
+  { title: "Em andamento", status: "pending" as Project["status"] },
+  { title: "Finalizado", status: "done" as Project["status"] },
+];
+
 const S2220 = () => {
   const { user, canAccessSector } = useAuth();
+  const { projects, users, updateProjectStatus } = useProjects();
   const currentYear = new Date().getFullYear();
   const [selectedMes, setSelectedMes] = useState(new Date().getMonth() + 1);
   const [selectedAno, setSelectedAno] = useState(currentYear);
   const [items, setItems] = useState<S2220Item[]>([]);
   const [newVerificacao, setNewVerificacao] = useState("");
   const [newErro, setNewErro] = useState("");
+  const [showTransferidos, setShowTransferidos] = useState(false);
+
+  const transferidoProjects = projects.filter(p => p.sector === "esocial" && (p as any).transferred && p.status !== "archived");
 
   useEffect(() => {
     const load = async () => {
@@ -151,6 +164,44 @@ const S2220 = () => {
             </h1>
             <p className="text-muted-foreground text-sm mt-1">Verificação diária e erros de envio</p>
           </div>
+        </div>
+
+        {/* Quadro Variáveis - Projetos transferidos */}
+        <div className="mb-6 animate-fade-in">
+          <button onClick={() => setShowTransferidos(!showTransferidos)} className="flex items-center gap-2.5 mb-4 w-full text-left">
+            <div className="w-7 h-7 rounded-[10px] bg-orange-400/10 flex items-center justify-center">
+              <PinOff className="w-3.5 h-3.5 text-orange-400 stroke-[1.5]" />
+            </div>
+            <h2 className="text-[15px] font-semibold text-foreground">Quadro Variáveis</h2>
+            <span className="text-[10px] text-muted-foreground">(projetos recebidos de outros setores)</span>
+            {transferidoProjects.length > 0 && (
+              <span className="ml-1 w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse">{transferidoProjects.length}</span>
+            )}
+            <ChevronDown className={cn("w-4 h-4 text-muted-foreground ml-auto transition-transform", showTransferidos && "rotate-180")} />
+          </button>
+          {showTransferidos && (
+            <div className="bg-card rounded-[12px] border p-5 neon-card shadow-[0_0_15px_rgba(251,146,60,0.15)] border-orange-400/20">
+              <div className="flex gap-5 overflow-x-auto pb-2">
+                {transferidoColumns.map((col) => {
+                  const colProjects = transferidoProjects.filter(p => p.status === col.status);
+                  return (
+                    <KanbanColumn
+                      key={`transf-${col.status}`}
+                      title={col.title}
+                      status={col.status}
+                      projects={colProjects}
+                      users={users}
+                      onDrop={(projectId, status) => updateProjectStatus(projectId, status)}
+                      count={colProjects.length}
+                    />
+                  );
+                })}
+              </div>
+              {transferidoProjects.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-4">Nenhum projeto transferido para o eSocial.</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Quadro eSocial */}

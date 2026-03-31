@@ -412,6 +412,7 @@ const Dashboard = () => {
   const [editingTecnico, setEditingTecnico] = useState<TecnicoProject | null>(null);
   const [showAchievement, setShowAchievement] = useState(false);
   const [showTransferidos, setShowTransferidos] = useState(false);
+  const [showDemandaAvulsa, setShowDemandaAvulsa] = useState(false);
   const [achievementName, setAchievementName] = useState("");
   const [addingVariavel, setAddingVariavel] = useState(false);
   const [newVariavel, setNewVariavel] = useState({ title: "", description: "", prioridade: "Média" as any });
@@ -831,13 +832,18 @@ const Dashboard = () => {
             {/* Quadro Variáveis - Técnico only, independent */}
             {isTecnico && !isGeneralDashboard && (
               <div className="mb-10 animate-fade-in">
-                <div className="flex items-center gap-2.5 mb-4">
+                <button onClick={() => setShowDemandaAvulsa(!showDemandaAvulsa)} className="flex items-center gap-2.5 mb-4 w-full text-left">
                   <div className="w-7 h-7 rounded-[10px] bg-accent flex items-center justify-center">
                     <PinOff className="w-3.5 h-3.5 text-accent-foreground stroke-[1.5]" />
                   </div>
                   <h2 className="text-[15px] font-semibold text-foreground">Demanda Avulsa</h2>
                   <span className="text-[10px] text-muted-foreground">(demandas avulsas independentes)</span>
-                </div>
+                  {variavelProjects.length > 0 && (
+                    <span className="ml-1 w-5 h-5 rounded-full bg-cyan-500 text-white text-[10px] font-bold flex items-center justify-center">{variavelProjects.length}</span>
+                  )}
+                  <ChevronDown className={cn("w-4 h-4 text-muted-foreground ml-auto transition-transform", showDemandaAvulsa && "rotate-180")} />
+                </button>
+                {showDemandaAvulsa && (
                 <div className={`bg-card rounded-[12px] border p-5 neon-card ${sectorNeonColors[sector as string] || ""}`}>
                   <div className="flex gap-5 overflow-x-auto pb-2 snap-x snap-mandatory md:snap-none">
                     {variavelColumns.map((col) => {
@@ -869,6 +875,7 @@ const Dashboard = () => {
                     })}
                   </div>
                 </div>
+                )}
               </div>
             )}
 
@@ -967,6 +974,14 @@ const Dashboard = () => {
                 </div>
                 <h2 className="text-[15px] font-semibold text-foreground">Quadro Treinamentos</h2>
                 <span className="text-[10px] text-muted-foreground">(integrado com Treinamentos)</span>
+              </div>
+            )}
+            {!isTecnico && !isComercial && !isDiretoria && !isGeneralDashboard && sector && (
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="w-7 h-7 rounded-[10px] bg-primary/10 flex items-center justify-center">
+                  <Layers className="w-3.5 h-3.5 text-primary stroke-[1.5]" />
+                </div>
+                <h2 className="text-[15px] font-semibold text-foreground">Quadro {getSectorTitle(sector)}</h2>
               </div>
             )}
 
