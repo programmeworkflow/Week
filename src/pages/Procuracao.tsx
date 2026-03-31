@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, FileCheck, Download } from "lucide-react";
+import { Plus, Trash2, FileCheck, Download, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCNPJ, formatTelefone } from "@/lib/formatters";
 import * as XLSX from "xlsx";
@@ -113,6 +113,41 @@ const Procuracao = () => {
     XLSX.writeFile(wb, "procuracoes_esocial.xlsx");
   };
 
+  const importExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const data = new Uint8Array(ev.target?.result as ArrayBuffer);
+      const wb = XLSX.read(data, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const json: any[] = XLSX.utils.sheet_to_json(ws);
+      const newRows: ProcuracaoRow[] = json.map((r, i) => {
+        const venc = r["Procuração (Vencimento)"] || r["Procuração"] || r["Procuracao"] || r["Vencimento"] || "";
+        const sit = venc ? getSituacaoFromDate(venc) : (r["Situação"] || r["Situacao"] || "");
+        return {
+          id: String(Date.now() + i),
+          empresa: r["Empresa"] || "",
+          cnpj_cpf: r["CNPJ/CPF"] || r["CNPJ"] || r["CPF"] || "",
+          situacao: sit || "",
+          contrato: r["Contrato"] || "",
+          email: r["E-mail"] || r["Email"] || "",
+          telefone: r["Telefone"] || r["Telefone empresa"] || "",
+          procuracao_vencimento: venc,
+          contabilidade: r["Contabilidade"] || "",
+        };
+      });
+      if (newRows.length) {
+        setRows(prev => [...prev, ...newRows]);
+        for (const row of newRows) {
+          await supabase.from("medwork_procuracoes").insert(row);
+        }
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = "";
+  };
+
   if (!user) return <Navigate to="/" replace />;
   if (!canAccessSector("esocial" as any) && !user.is_admin) return <Navigate to="/profile" replace />;
 
@@ -158,6 +193,10 @@ const Procuracao = () => {
             <Button variant="outline" onClick={exportExcel} className="gap-1.5 text-xs rounded-lg h-9 btn-3d neon-hover animate-float">
               <Download className="w-3.5 h-3.5" /> Exportar Excel
             </Button>
+            <Button variant="outline" onClick={() => document.getElementById("import-excel")?.click()} className="gap-1.5 text-xs rounded-lg h-9 btn-3d neon-hover animate-float">
+              <Upload className="w-3.5 h-3.5" /> Importar Excel
+            </Button>
+            <input id="import-excel" type="file" accept=".xlsx,.xls,.csv" onChange={importExcel} className="hidden" />
             <Button onClick={() => setAdding(true)} className="gap-1.5 text-xs rounded-lg h-9 btn-3d neon-hover animate-float bg-primary text-primary-foreground">
               <Plus className="w-3.5 h-3.5" /> Adicionar
             </Button>
