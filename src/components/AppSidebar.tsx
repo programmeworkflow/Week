@@ -21,37 +21,37 @@ const sectorNeonStyles: Record<Sector, { active: string; hover: string; border: 
     active: "dark:shadow-[0_0_12px_rgba(34,211,238,0.4)] bg-cyan-400/10",
     hover: "dark:hover:shadow-[0_0_10px_rgba(34,211,238,0.25)] hover:bg-cyan-400/10 dark:hover:bg-cyan-400/5",
     border: "border-l-cyan-600 dark:border-l-cyan-400",
-    text: "text-cyan-800 dark:text-cyan-400",
+    text: "text-cyan-950 dark:text-cyan-400",
   },
   comercial: {
     active: "dark:shadow-[0_0_12px_rgba(251,191,36,0.4)] bg-amber-400/10",
     hover: "dark:hover:shadow-[0_0_10px_rgba(251,191,36,0.25)] hover:bg-amber-400/10 dark:hover:bg-amber-400/5",
-    border: "border-l-amber-600 dark:border-l-amber-400",
-    text: "text-amber-800 dark:text-amber-400",
+    border: "border-l-amber-700 dark:border-l-amber-400",
+    text: "text-amber-950 dark:text-amber-400",
   },
   saude: {
     active: "dark:shadow-[0_0_12px_rgba(244,114,182,0.4)] bg-pink-400/10",
     hover: "dark:hover:shadow-[0_0_10px_rgba(244,114,182,0.25)] hover:bg-pink-400/10 dark:hover:bg-pink-400/5",
-    border: "border-l-pink-600 dark:border-l-pink-400",
-    text: "text-pink-800 dark:text-pink-400",
+    border: "border-l-pink-700 dark:border-l-pink-400",
+    text: "text-pink-950 dark:text-pink-400",
   },
   financeiro: {
     active: "dark:shadow-[0_0_12px_rgba(52,211,153,0.4)] bg-emerald-400/10",
     hover: "dark:hover:shadow-[0_0_10px_rgba(52,211,153,0.25)] hover:bg-emerald-400/10 dark:hover:bg-emerald-400/5",
-    border: "border-l-emerald-600 dark:border-l-emerald-400",
-    text: "text-emerald-800 dark:text-emerald-400",
+    border: "border-l-emerald-700 dark:border-l-emerald-400",
+    text: "text-emerald-950 dark:text-emerald-400",
   },
   psicossocial: {
     active: "dark:shadow-[0_0_12px_rgba(168,85,247,0.4)] bg-purple-400/10",
     hover: "dark:hover:shadow-[0_0_10px_rgba(168,85,247,0.25)] hover:bg-purple-400/10 dark:hover:bg-purple-400/5",
-    border: "border-l-purple-600 dark:border-l-purple-400",
-    text: "text-purple-800 dark:text-purple-400",
+    border: "border-l-purple-700 dark:border-l-purple-400",
+    text: "text-purple-950 dark:text-purple-400",
   },
   diretoria: {
     active: "dark:shadow-[0_0_12px_rgba(167,139,250,0.4)] bg-violet-400/10",
     hover: "dark:hover:shadow-[0_0_10px_rgba(167,139,250,0.25)] hover:bg-violet-400/10 dark:hover:bg-violet-400/5",
-    border: "border-l-violet-600 dark:border-l-violet-400",
-    text: "text-violet-800 dark:text-violet-400",
+    border: "border-l-violet-700 dark:border-l-violet-400",
+    text: "text-violet-950 dark:text-violet-400",
   },
 };
 
@@ -304,12 +304,12 @@ export const AppSidebar = () => {
                 className={cn(
                   "flex items-center gap-2.5 text-[13px] w-full px-3 py-2 rounded-[10px] transition-all duration-300",
                   location.pathname === "/premiacao"
-                    ? "bg-yellow-400/10 text-yellow-800 dark:text-yellow-400 dark:shadow-[0_0_12px_rgba(250,204,21,0.3)]"
-                    : "text-yellow-800 dark:text-yellow-400/70 hover:bg-yellow-400/10 dark:hover:shadow-[0_0_10px_rgba(250,204,21,0.25)] dark:hover:bg-yellow-400/5",
+                    ? "bg-yellow-400/10 text-yellow-950 dark:text-yellow-400 dark:shadow-[0_0_12px_rgba(250,204,21,0.3)]"
+                    : "text-yellow-950 dark:text-yellow-400/70 hover:bg-yellow-400/10 dark:hover:shadow-[0_0_10px_rgba(250,204,21,0.25)] dark:hover:bg-yellow-400/5",
                   collapsed && "justify-center px-2"
                 )}
               >
-                <Trophy className="w-[18px] h-[18px] flex-shrink-0 stroke-[1.5] text-yellow-800 dark:text-yellow-400" />
+                <Trophy className="w-[18px] h-[18px] flex-shrink-0 stroke-[1.5] text-yellow-950 dark:text-yellow-400" />
                 {!collapsed && <span>Premiação</span>}
               </Link>
             </TooltipTrigger>
