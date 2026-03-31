@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Project, Sector, TecnicoProject, KanbanVariavelCard, RenovacaoCard, RenovacaoStatus, ProjectAttachment, TECNICO_RESPONSAVEIS, TECNICO_PRIORIDADES, TECNICO_STATUS_OPTIONS } from "@/lib/mock-data";
 import { getBoardTitle } from "@/lib/sectors";
 import { formatCNPJ as fmtCNPJ, formatTelefone, formatDate as fmtDate } from "@/lib/formatters";
+import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { Download, RefreshCw, Crown, Filter, Copy, ArrowRightLeft, Plus, Layers, PinOff, Edit2, Trash2, X, Send, Mic, Square, Play, Pause, Paperclip, Archive } from "lucide-react";
 import { AchievementToast } from "@/components/AchievementToast";
@@ -463,7 +464,7 @@ const Dashboard = () => {
       ? projects.filter((p) => p.sector === sector)
       : projects;
 
-  const filtered = filter === "all"
+  const filtered = (filter === "all" || isTecnico)
     ? sectorProjects
     : sectorProjects.filter((p) => p.responsible_ids.includes(filter));
 
@@ -501,12 +502,29 @@ const Dashboard = () => {
 
   const columns = getColumnsForSector();
 
+  const registerPremiacao = async (projectName: string, sectorName: string, responsavelName?: string) => {
+    const name = responsavelName || user?.full_name || "Desconhecido";
+    const userId = user?.id || "0";
+    await supabase.from("medwork_premiacao").insert({
+      id: String(Date.now()),
+      user_name: name,
+      user_id: userId,
+      project_name: projectName,
+      sector: sectorName,
+      points: 100,
+      completed_at: new Date().toISOString(),
+    });
+  };
+
   const handleDrop = (projectId: string, newStatus: Project["status"]) => {
     if (newStatus === "done") {
       const p = sectorProjects.find(pr => pr.id === projectId);
       if (p && p.status !== "done") {
         setAchievementName(p.project_name);
         setShowAchievement(true);
+        // Find responsible user name
+        const respUser = users.find(u => p.responsible_ids?.includes(u.id));
+        registerPremiacao(p.project_name, sector || "geral", respUser?.full_name);
       }
     }
     updateProjectStatus(projectId, newStatus);
@@ -526,6 +544,7 @@ const Dashboard = () => {
       if (tp && tp.status_tecnico !== "Finalizada") {
         setAchievementName(tp.empresa);
         setShowAchievement(true);
+        registerPremiacao(tp.empresa, "tecnico", tp.responsavel);
       }
     }
     const tecnicoStatus = reverseStatusMap[newStatus];
@@ -538,8 +557,10 @@ const Dashboard = () => {
     if (newStatus === "done") {
       const card = kanbanVariavelCards.find((c) => c.id === cardId);
       if (card && card.status !== "done") {
-        setAchievementName(card.title || card.empresa || "Projeto");
+        const name = card.title || card.empresa || "Projeto";
+        setAchievementName(name);
         setShowAchievement(true);
+        registerPremiacao(name, "tecnico", (card as any).responsavel);
       }
     }
     updateKanbanVariavelStatus(cardId, newStatus);
@@ -780,9 +801,6 @@ const Dashboard = () => {
                   </div>
                   <h2 className="text-[15px] font-semibold text-foreground">Demanda Avulsa</h2>
                   <span className="text-[10px] text-muted-foreground">(demandas avulsas independentes)</span>
-                  <Button variant="outline" size="sm" onClick={() => setAddingVariavel(true)} className="ml-auto gap-1.5 text-xs rounded-lg h-8 btn-3d neon-hover animate-float">
-                    <Plus className="w-3.5 h-3.5" /> Novo card
-                  </Button>
                 </div>
                 <div className={`bg-card rounded-[12px] border p-5 neon-card ${sectorNeonColors[sector as string] || ""}`}>
                   <div className="flex gap-5 overflow-x-auto pb-2 snap-x snap-mandatory md:snap-none">

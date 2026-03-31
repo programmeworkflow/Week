@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { LayoutDashboard, User, LogOut, List, ChevronDown, ChevronRight, Stethoscope, Briefcase, Heart, DollarSign, Crown, Lock, PanelLeftClose, PanelLeft, Menu, Calendar, Sun, Moon, Archive, Brain } from "lucide-react";
+import { LayoutDashboard, User, LogOut, List, ChevronDown, ChevronRight, Stethoscope, Briefcase, Heart, DollarSign, Crown, Lock, PanelLeftClose, PanelLeft, Menu, Calendar, Sun, Moon, Archive, Brain, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SECTORS, Sector } from "@/lib/mock-data";
 import medworkLogo from "@/assets/medwork-logo.png";
@@ -297,6 +297,26 @@ export const AppSidebar = () => {
 
         {/* User footer */}
         <div className="p-3 border-t border-border space-y-2">
+          {/* Premiação button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                to="/premiacao"
+                className={cn(
+                  "flex items-center gap-2.5 text-[13px] w-full px-3 py-2 rounded-[10px] transition-all duration-300",
+                  location.pathname === "/premiacao"
+                    ? "bg-yellow-400/10 text-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.3)]"
+                    : "text-yellow-400/70 opacity-80 hover:opacity-100 hover:shadow-[0_0_10px_rgba(250,204,21,0.25)] hover:bg-yellow-400/5",
+                  collapsed && "justify-center px-2"
+                )}
+              >
+                <Trophy className="w-[18px] h-[18px] flex-shrink-0 stroke-[1.5] text-yellow-400" />
+                {!collapsed && <span>Premiação</span>}
+              </Link>
+            </TooltipTrigger>
+            {collapsed && <TooltipContent side="right"><p className="text-xs">Premiação</p></TooltipContent>}
+          </Tooltip>
+
           {/* Theme toggle - acima da foto do usuário */}
           <Tooltip>
             <TooltipTrigger asChild>
