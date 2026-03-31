@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Layers, PinOff, RefreshCw } from "lucide-react";
+import { Plus, Layers, PinOff, RefreshCw, Crown } from "lucide-react";
 import { SECTORS, Sector } from "@/lib/mock-data";
 import { formatCNPJ, formatTelefone } from "@/lib/formatters";
 
@@ -36,7 +36,9 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
 
   const isTecnico = form.sector === "tecnico";
   const isComercial = form.sector === "comercial";
+  const isDiretoria = form.sector === "diretoria";
   const [comercialQuadro, setComercialQuadro] = useState<"treinamento" | "comercial">("treinamento");
+  const [diretoriaQuadro, setDiretoriaQuadro] = useState<"samuel" | "fernando">("samuel");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +82,7 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
         ...form,
         company_id: "1",
         status: "not_authenticated",
-        is_renovation: isComercial && comercialQuadro === "comercial",
+        is_renovation: (isComercial && comercialQuadro === "comercial") || (isDiretoria && diretoriaQuadro === "fernando"),
       });
     }
 
@@ -245,6 +247,35 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
                   <div>
                     <span className={`text-sm font-medium block ${comercialQuadro === "comercial" ? "text-blue-500" : "text-foreground"}`}>Comercial</span>
                   </div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Quadro selector - Diretoria */}
+          {isDiretoria && (
+            <div className="space-y-2 animate-fade-in">
+              <Label className="text-xs font-medium">Quadro</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button"
+                  onClick={() => setDiretoriaQuadro("samuel")}
+                  className={`flex items-center gap-2.5 p-3 rounded-xl border-2 transition-all ${
+                    diretoriaQuadro === "samuel" ? "border-violet-400 bg-violet-400/10" : "border-border hover:border-violet-400/40"
+                  }`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${diretoriaQuadro === "samuel" ? "bg-violet-400/20" : "bg-muted"}`}>
+                    <Crown className={`w-4 h-4 ${diretoriaQuadro === "samuel" ? "text-violet-400" : "text-muted-foreground"}`} />
+                  </div>
+                  <span className={`text-sm font-medium ${diretoriaQuadro === "samuel" ? "text-violet-500" : "text-foreground"}`}>Quadro Samuel</span>
+                </button>
+                <button type="button"
+                  onClick={() => setDiretoriaQuadro("fernando")}
+                  className={`flex items-center gap-2.5 p-3 rounded-xl border-2 transition-all ${
+                    diretoriaQuadro === "fernando" ? "border-violet-400 bg-violet-400/10" : "border-border hover:border-violet-400/40"
+                  }`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${diretoriaQuadro === "fernando" ? "bg-violet-400/20" : "bg-muted"}`}>
+                    <Crown className={`w-4 h-4 ${diretoriaQuadro === "fernando" ? "text-violet-400" : "text-muted-foreground"}`} />
+                  </div>
+                  <span className={`text-sm font-medium ${diretoriaQuadro === "fernando" ? "text-violet-500" : "text-foreground"}`}>Quadro Fernando</span>
                 </button>
               </div>
             </div>
