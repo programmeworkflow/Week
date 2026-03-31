@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Project, Sector, TecnicoProject, KanbanVariavelCard, RenovacaoCard, RenovacaoStatus, ProjectAttachment, TECNICO_RESPONSAVEIS, TECNICO_PRIORIDADES, TECNICO_STATUS_OPTIONS } from "@/lib/mock-data";
-import { getBoardTitle } from "@/lib/sectors";
+import { getBoardTitle, getSectorTitle } from "@/lib/sectors";
 import { formatCNPJ as fmtCNPJ, formatTelefone, formatDate as fmtDate } from "@/lib/formatters";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
