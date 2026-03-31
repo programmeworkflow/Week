@@ -132,7 +132,7 @@ export const AppSidebar = () => {
             </div>
             {!collapsed && (
               <div>
-                <span className="font-semibold text-foreground text-[13px]">MedWork</span>
+                <span className="font-semibold text-foreground text-[13px]">Back to Work - MedWork</span>
                 <span className="block text-[10px] text-muted-foreground leading-none">Medicina e Segurança</span>
               </div>
             )}
