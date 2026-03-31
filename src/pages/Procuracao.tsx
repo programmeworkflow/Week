@@ -252,7 +252,7 @@ const Procuracao = () => {
               </div>
               <div>
                 <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">CNPJ/CPF</label>
-                <Input value={fCnpj} onChange={(e) => { setFCnpj(e.target.value); setPage(1); }} placeholder="Buscar..." className="h-8 text-xs rounded-lg" />
+                <Input value={fCnpj} onChange={(e) => { setFCnpj(formatCNPJorCPF(e.target.value)); setPage(1); }} placeholder="CNPJ ou CPF" className="h-8 text-xs rounded-lg" />
               </div>
               <div>
                 <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Situação</label>
@@ -269,7 +269,7 @@ const Procuracao = () => {
               </div>
               <div>
                 <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Contrato</label>
-                <Input value={fContrato} onChange={(e) => { setFContrato(e.target.value); setPage(1); }} placeholder="Buscar..." className="h-8 text-xs rounded-lg" />
+                <Input value={fContrato} onChange={(e) => { setFContrato(fmtDate(e.target.value)); setPage(1); }} placeholder="dd/mm/aaaa" className="h-8 text-xs rounded-lg" />
               </div>
               <div>
                 <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">E-mail</label>
@@ -277,11 +277,11 @@ const Procuracao = () => {
               </div>
               <div>
                 <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Telefone</label>
-                <Input value={fTelefone} onChange={(e) => { setFTelefone(e.target.value); setPage(1); }} placeholder="Buscar..." className="h-8 text-xs rounded-lg" />
+                <Input value={fTelefone} onChange={(e) => { setFTelefone(formatTelefone(e.target.value)); setPage(1); }} placeholder="(00) 00000-0000" className="h-8 text-xs rounded-lg" />
               </div>
               <div>
                 <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Procuração</label>
-                <Input value={fProcuracao} onChange={(e) => { setFProcuracao(e.target.value); setPage(1); }} placeholder="dd/mm/aaaa" className="h-8 text-xs rounded-lg" />
+                <Input value={fProcuracao} onChange={(e) => { setFProcuracao(fmtDate(e.target.value)); setPage(1); }} placeholder="dd/mm/aaaa" className="h-8 text-xs rounded-lg" />
               </div>
               <div>
                 <label className="text-[10px] font-medium text-muted-foreground uppercase mb-1 block">Contabilidade</label>
