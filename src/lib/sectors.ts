@@ -2,6 +2,7 @@ import { Sector } from "./mock-data";
 
 export const sectorTitles: Record<Sector, string> = {
   tecnico: "Setor Técnico",
+  esocial: "eSocial",
   comercial: "Comercial/Treinamentos",
   saude: "Saúde",
   financeiro: "Financeiro",

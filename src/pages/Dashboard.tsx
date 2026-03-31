@@ -113,6 +113,7 @@ const psicossocialColumns: { title: string; status: Project["status"] }[] = [
 
 const sectorNeonColors: Record<string, string> = {
   tecnico: "shadow-[0_0_15px_rgba(34,211,238,0.15)] border-cyan-400/20",
+  esocial: "shadow-[0_0_15px_rgba(59,130,246,0.15)] border-blue-400/20",
   comercial: "shadow-[0_0_15px_rgba(251,191,36,0.15)] border-amber-400/20",
   saude: "shadow-[0_0_15px_rgba(244,114,182,0.15)] border-pink-400/20",
   financeiro: "shadow-[0_0_15px_rgba(52,211,153,0.15)] border-emerald-400/20",

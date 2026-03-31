@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { LayoutDashboard, User, LogOut, List, ChevronDown, ChevronRight, Stethoscope, Briefcase, Heart, DollarSign, Crown, Lock, PanelLeftClose, PanelLeft, Menu, Calendar, Sun, Moon, Archive, Brain, Trophy } from "lucide-react";
+import { LayoutDashboard, User, LogOut, List, ChevronDown, ChevronRight, Stethoscope, Briefcase, Heart, DollarSign, Crown, Lock, PanelLeftClose, PanelLeft, Menu, Calendar, Sun, Moon, Archive, Brain, Trophy, FileCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SECTORS, Sector } from "@/lib/mock-data";
 import medworkLogo from "@/assets/medwork-logo.png";
@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 const sectorIcons: Record<Sector, React.ElementType> = {
   tecnico: Stethoscope,
+  esocial: FileCheck,
   comercial: Briefcase,
   saude: Heart,
   financeiro: DollarSign,
@@ -22,6 +23,12 @@ const sectorNeonStyles: Record<Sector, { active: string; hover: string; border: 
     hover: "dark:hover:shadow-[0_0_10px_rgba(34,211,238,0.25)] hover:bg-cyan-400/10 dark:hover:bg-cyan-400/5",
     border: "border-l-cyan-600 dark:border-l-cyan-400",
     text: "text-cyan-950 dark:text-cyan-400",
+  },
+  esocial: {
+    active: "dark:shadow-[0_0_12px_rgba(59,130,246,0.4)] bg-blue-400/10",
+    hover: "dark:hover:shadow-[0_0_10px_rgba(59,130,246,0.25)] hover:bg-blue-400/10 dark:hover:bg-blue-400/5",
+    border: "border-l-blue-700 dark:border-l-blue-400",
+    text: "text-blue-950 dark:text-blue-400",
   },
   comercial: {
     active: "dark:shadow-[0_0_12px_rgba(251,191,36,0.4)] bg-amber-400/10",
@@ -235,6 +242,21 @@ export const AppSidebar = () => {
 
                 {isExpanded && hasAccess && !collapsed && (
                   <div className={cn("ml-5 mt-0.5 space-y-0.5 border-l-2 pl-3 animate-fade-in", neon.border)}>
+                    {id === "esocial" ? (
+                      <Link
+                        to="/esocial/procuracao"
+                        className={cn(
+                          "flex items-center gap-2 px-2.5 py-1.5 rounded-[8px] text-xs transition-all duration-300",
+                          isActive("/esocial/procuracao")
+                            ? `font-medium ${neon.active} ${neon.text}`
+                            : `text-muted-foreground ${neon.hover} hover:text-foreground`
+                        )}
+                      >
+                        <FileCheck className="w-3.5 h-3.5 stroke-[1.5]" />
+                        Procuração
+                      </Link>
+                    ) : (
+                    <>
                     <Link
                       to={sectorDashPath}
                       className={cn(
@@ -286,6 +308,8 @@ export const AppSidebar = () => {
                           Arquivados
                         </Link>
                       </>
+                    )}
+                    </>
                     )}
                   </div>
                 )}
