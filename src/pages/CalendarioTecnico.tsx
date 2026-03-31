@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { supabase } from "@/lib/supabase";
+import { isGoogleConnected, initGoogleAuth, disconnectGoogle, createGoogleEvent, updateGoogleEvent, deleteGoogleEvent } from "@/lib/googleCalendar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -77,6 +78,21 @@ const CalendarioTecnico = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const isTecnico = currentSector === "tecnico";
+  const [googleConnected, setGoogleConnected] = useState(isGoogleConnected());
+
+  const handleConnectGoogle = async () => {
+    try {
+      await initGoogleAuth();
+      setGoogleConnected(true);
+    } catch (err) {
+      console.error("Erro ao conectar Google:", err);
+    }
+  };
+
+  const handleDisconnectGoogle = () => {
+    disconnectGoogle();
+    setGoogleConnected(false);
+  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -141,18 +157,54 @@ const CalendarioTecnico = () => {
       criado_por: user.full_name, instrutor: "", origem: "manual",
     };
 
+    // Google Calendar sync
+    const gcalEvent = {
+      summary: `${getTipoLabel(formData.tipo as any)}${compromisso.instrutor ? ` - ${compromisso.instrutor}` : ""}`,
+      date: formData.data,
+      startTime: formData.horaInicio,
+      endTime: formData.horaFim,
+      description: `Criado por: ${user.full_name}\nOrigem: MedWork`,
+    };
+
     if (editingId) {
       setCompromissos((prev) => prev.map((c) => (c.id === editingId ? compromisso : c)));
       await supabase.from("medwork_compromissos").update(dbRow).eq("id", editingId);
+      // Update Google Calendar event if connected
+      if (googleConnected) {
+        try {
+          const { data: existing } = await supabase.from("medwork_compromissos").select("google_event_id").eq("id", editingId).single();
+          if (existing?.google_event_id) {
+            await updateGoogleEvent(existing.google_event_id, gcalEvent);
+          }
+        } catch (e) { console.error("Erro ao atualizar Google Calendar:", e); }
+      }
     } else {
       setCompromissos((prev) => [...prev, compromisso]);
       await supabase.from("medwork_compromissos").insert(dbRow);
+      // Create Google Calendar event if connected
+      if (googleConnected) {
+        try {
+          const googleEventId = await createGoogleEvent(gcalEvent);
+          if (googleEventId) {
+            await supabase.from("medwork_compromissos").update({ google_event_id: googleEventId }).eq("id", id);
+          }
+        } catch (e) { console.error("Erro ao criar Google Calendar:", e); }
+      }
     }
     setModalOpen(false);
     resetForm();
   };
 
   const handleDelete = async (id: string) => {
+    // Delete from Google Calendar if connected
+    if (googleConnected) {
+      try {
+        const { data: existing } = await supabase.from("medwork_compromissos").select("google_event_id").eq("id", id).single();
+        if (existing?.google_event_id) {
+          await deleteGoogleEvent(existing.google_event_id);
+        }
+      } catch (e) { console.error("Erro ao excluir do Google Calendar:", e); }
+    }
     setCompromissos((prev) => prev.filter((c) => c.id !== id));
     setDeleteConfirm(null);
     setSelectedEvent(null);
@@ -300,6 +352,15 @@ const CalendarioTecnico = () => {
                 <Plus className="w-3.5 h-3.5" />
                 Novo compromisso
               </Button>
+              {googleConnected ? (
+                <Button variant="outline" onClick={handleDisconnectGoogle} className="h-8 rounded-lg text-xs gap-1.5 border-green-500/30 text-green-600 dark:text-green-400 hover:bg-green-500/10">
+                  <CalendarIcon className="w-3.5 h-3.5" /> Google conectado
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={handleConnectGoogle} className="h-8 rounded-lg text-xs gap-1.5 border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10">
+                  <CalendarIcon className="w-3.5 h-3.5" /> Conectar Google
+                </Button>
+              )}
             </div>
           </div>
 
@@ -509,22 +570,50 @@ const CalendarioTecnico = () => {
                 </div>
 
                 {/* Google Calendar */}
-                <Button
-                  variant="outline"
-                  className="w-full h-8 rounded-lg text-xs gap-1.5 border-blue-400/30 text-blue-600 dark:text-blue-400 hover:bg-blue-400/10"
-                  onClick={() => {
-                    const ev = selectedEvent;
-                    const dateStr = format(ev.data, "yyyyMMdd");
-                    const start = ev.horaInicio && ev.horaInicio !== "A confirmar" ? ev.horaInicio.replace(":", "") + "00" : "080000";
-                    const end = ev.horaFim ? ev.horaFim.replace(":", "") + "00" : "120000";
-                    const title = encodeURIComponent(`${getTipoLabel(ev.tipo)}${ev.instrutor ? ` - ${ev.instrutor}` : ""}`);
-                    const details = encodeURIComponent(`Criado por: ${ev.criadoPor}${ev.instrutor ? `\nInstrutor: ${ev.instrutor}` : ""}\nOrigem: MedWork`);
-                    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}T${start}/${dateStr}T${end}&details=${details}`;
-                    window.open(url, "_blank");
-                  }}
-                >
-                  <CalendarIcon className="w-3 h-3" /> Adicionar ao Google Calendar
-                </Button>
+                {googleConnected ? (
+                  <Button
+                    variant="outline"
+                    className="w-full h-8 rounded-lg text-xs gap-1.5 border-green-500/30 text-green-600 dark:text-green-400 hover:bg-green-500/10"
+                    onClick={async () => {
+                      const ev = selectedEvent;
+                      const dateStr = format(ev.data, "yyyy-MM-dd");
+                      try {
+                        const googleEventId = await createGoogleEvent({
+                          summary: `${getTipoLabel(ev.tipo)}${ev.instrutor ? ` - ${ev.instrutor}` : ""}`,
+                          date: dateStr,
+                          startTime: ev.horaInicio,
+                          endTime: ev.horaFim,
+                          description: `Criado por: ${ev.criadoPor}${ev.instrutor ? `\nInstrutor: ${ev.instrutor}` : ""}\nOrigem: MedWork`,
+                        });
+                        if (googleEventId) {
+                          await supabase.from("medwork_compromissos").update({ google_event_id: googleEventId }).eq("id", ev.id);
+                        }
+                        alert("Agendado no Google Calendar!");
+                      } catch (e: any) {
+                        alert(e.message || "Erro ao agendar");
+                      }
+                    }}
+                  >
+                    <CalendarIcon className="w-3 h-3" /> Agendar no Google
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="w-full h-8 rounded-lg text-xs gap-1.5 border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10"
+                    onClick={() => {
+                      const ev = selectedEvent;
+                      const dateStr = format(ev.data, "yyyyMMdd");
+                      const start = ev.horaInicio && ev.horaInicio !== "A confirmar" ? ev.horaInicio.replace(":", "") + "00" : "080000";
+                      const end = ev.horaFim ? ev.horaFim.replace(":", "") + "00" : "120000";
+                      const title = encodeURIComponent(`${getTipoLabel(ev.tipo)}${ev.instrutor ? ` - ${ev.instrutor}` : ""}`);
+                      const details = encodeURIComponent(`Criado por: ${ev.criadoPor}${ev.instrutor ? `\nInstrutor: ${ev.instrutor}` : ""}\nOrigem: MedWork`);
+                      const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}T${start}/${dateStr}T${end}&details=${details}`;
+                      window.open(url, "_blank");
+                    }}
+                  >
+                    <CalendarIcon className="w-3 h-3" /> Adicionar manualmente
+                  </Button>
+                )}
 
                 <div className="flex gap-2 pt-3 border-t border-border">
                   <Button variant="outline" onClick={() => openEdit(selectedEvent)} className="flex-1 h-8 rounded-lg text-xs gap-1 btn-3d neon-hover animate-float">
