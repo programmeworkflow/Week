@@ -491,13 +491,17 @@ const CalendarioTecnico = () => {
             {/* Para quem (convidado Google Calendar) */}
             <div className="space-y-1.5">
               <Label className="text-xs">Para quem? (notificação no Google)</Label>
-              <Select value={formData.paraNome} onValueChange={(v) => {
-                const u = users.find(u => u.full_name === v);
-                setFormData({ ...formData, paraNome: v, paraEmail: u?.email || "" });
+              <Select value={formData.paraNome || "ninguem"} onValueChange={(v) => {
+                if (v === "ninguem") {
+                  setFormData({ ...formData, paraNome: "", paraEmail: "" });
+                } else {
+                  const u = users.find(u => u.full_name === v);
+                  setFormData({ ...formData, paraNome: v, paraEmail: u?.email || "" });
+                }
               }}>
                 <SelectTrigger className="h-9 rounded-lg text-xs"><SelectValue placeholder="Selecione a pessoa" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Ninguém (só eu)</SelectItem>
+                  <SelectItem value="ninguem">Ninguém (só eu)</SelectItem>
                   {users.map(u => <SelectItem key={u.id} value={u.full_name}>{u.full_name} ({u.email})</SelectItem>)}
                 </SelectContent>
               </Select>

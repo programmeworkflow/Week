@@ -111,6 +111,7 @@ const ProjectDetail = () => {
   const [transferOpen, setTransferOpen] = useState(false);
   const [transferSector, setTransferSector] = useState<Sector | "">("");
   const [transferDescription, setTransferDescription] = useState("");
+  const [transferResponsaveis, setTransferResponsaveis] = useState<string[]>([]);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -259,26 +260,32 @@ const ProjectDetail = () => {
   };
 
   // === TRANSFER ===
-  const handleTransferSector = (newSector: Sector, description: string) => {
+  const handleTransferSector = (newSector: Sector, description: string, newResponsaveis: string[]) => {
     if (isTecnico) {
       transferTecnicoToSector(projectId, newSector, description, user?.id || "1");
+      // Update responsible_ids on the new project
+      setTimeout(() => {
+        const newProj = projects.find(p => p.project_name === tecnicoProject?.empresa && p.sector === newSector);
+        if (newProj && newResponsaveis.length) updateProject(newProj.id, { responsible_ids: newResponsaveis } as any);
+      }, 500);
       navigate(-1);
     } else if (isRegular) {
       addMessage({
         projeto_id: projectId,
         usuario_id: user?.id || "1",
-        conteudo: `📦 Projeto transferido para ${SECTORS.find(s => s.id === newSector)?.label}. Motivo: ${description}`,
+        conteudo: `Projeto transferido para ${SECTORS.find(s => s.id === newSector)?.label}. Motivo: ${description}`,
       });
-      updateProject(projectId, { sector: newSector });
+      updateProject(projectId, { sector: newSector, responsible_ids: newResponsaveis.length ? newResponsaveis : regularProject!.responsible_ids } as any);
     }
   };
 
   const handleTransferSubmit = () => {
     if (!transferSector || !transferDescription.trim()) return;
-    handleTransferSector(transferSector as Sector, transferDescription.trim());
+    handleTransferSector(transferSector as Sector, transferDescription.trim(), transferResponsaveis);
     setTransferOpen(false);
     setTransferSector("");
     setTransferDescription("");
+    setTransferResponsaveis([]);
   };
 
   // === CHAT ===
@@ -932,6 +939,25 @@ const ProjectDetail = () => {
                 <Label>Descrição da transferência <span className="text-destructive">*</span></Label>
                 <Textarea value={transferDescription} onChange={(e) => setTransferDescription(e.target.value)} placeholder="Descreva o motivo da transferência..." rows={3} className="rounded-xl" />
               </div>
+              {transferSector && (
+                <div className="space-y-2">
+                  <Label>Responsáveis no novo setor</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {users.filter(u => u.sectors?.includes(transferSector as any)).map(u => (
+                      <button key={u.id} type="button"
+                        onClick={() => setTransferResponsaveis(prev => prev.includes(u.id) ? prev.filter(r => r !== u.id) : [...prev, u.id])}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all duration-200 ${
+                          transferResponsaveis.includes(u.id) ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-muted text-muted-foreground border-border hover:border-primary/50"
+                        }`}>
+                        {u.full_name}
+                      </button>
+                    ))}
+                    {users.filter(u => u.sectors?.includes(transferSector as any)).length === 0 && (
+                      <span className="text-xs text-muted-foreground">Nenhum membro neste setor</span>
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" onClick={() => setTransferOpen(false)} className="flex-1 rounded-[10px]">Cancelar</Button>
                 <Button onClick={handleTransferSubmit} disabled={!transferSector || !transferDescription.trim()} className="flex-1 rounded-[10px] bg-primary text-primary-foreground hover:bg-primary/90">Transferir</Button>

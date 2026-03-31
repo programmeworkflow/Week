@@ -35,6 +35,8 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
   });
 
   const isTecnico = form.sector === "tecnico";
+  const isComercial = form.sector === "comercial";
+  const [comercialQuadro, setComercialQuadro] = useState<"treinamento" | "comercial">("treinamento");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +80,7 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
         ...form,
         company_id: "1",
         status: "not_authenticated",
+        is_renovation: isComercial && comercialQuadro === "comercial",
       });
     }
 
@@ -208,6 +211,39 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
                   <div>
                     <span className={`text-sm font-medium block ${quadroTipo === "renovacao" ? "text-orange-400" : "text-foreground"}`}>Renovação</span>
                     <span className="text-[10px] text-muted-foreground">Renovações e pendências</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Quadro selector - Comercial */}
+          {isComercial && (
+            <div className="space-y-2 animate-fade-in">
+              <Label className="text-xs font-medium">Quadro</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button"
+                  onClick={() => setComercialQuadro("treinamento")}
+                  className={`flex items-center gap-2.5 p-3 rounded-xl border-2 transition-all ${
+                    comercialQuadro === "treinamento" ? "border-amber-400 bg-amber-400/10" : "border-border hover:border-amber-400/40"
+                  }`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${comercialQuadro === "treinamento" ? "bg-amber-400/20" : "bg-muted"}`}>
+                    <Layers className={`w-4 h-4 ${comercialQuadro === "treinamento" ? "text-amber-400" : "text-muted-foreground"}`} />
+                  </div>
+                  <div>
+                    <span className={`text-sm font-medium block ${comercialQuadro === "treinamento" ? "text-amber-500" : "text-foreground"}`}>Treinamentos</span>
+                  </div>
+                </button>
+                <button type="button"
+                  onClick={() => setComercialQuadro("comercial")}
+                  className={`flex items-center gap-2.5 p-3 rounded-xl border-2 transition-all ${
+                    comercialQuadro === "comercial" ? "border-blue-400 bg-blue-400/10" : "border-border hover:border-blue-400/40"
+                  }`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${comercialQuadro === "comercial" ? "bg-blue-400/20" : "bg-muted"}`}>
+                    <Layers className={`w-4 h-4 ${comercialQuadro === "comercial" ? "text-blue-400" : "text-muted-foreground"}`} />
+                  </div>
+                  <div>
+                    <span className={`text-sm font-medium block ${comercialQuadro === "comercial" ? "text-blue-500" : "text-foreground"}`}>Comercial</span>
                   </div>
                 </button>
               </div>
