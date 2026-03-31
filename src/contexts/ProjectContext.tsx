@@ -40,6 +40,11 @@ interface ProjectContextType {
   updateRenovacaoCard: (id: string, data: Partial<Omit<RenovacaoCard, "id">>) => void;
   deleteRenovacaoCard: (id: string) => void;
   updateRenovacaoStatus: (id: string, status: RenovacaoStatus) => void;
+  // Treinamento rows (Cremonese, Engetins)
+  treinamentoRows: { id: string; grupo: string; treinamento: string; data: string; aluno: string; instrutor: string }[];
+  addTreinamentoRow: (row: Omit<{ id: string; grupo: string; treinamento: string; data: string; aluno: string; instrutor: string }, "id">) => void;
+  updateTreinamentoRow: (id: string, data: Partial<{ treinamento: string; data: string; aluno: string; instrutor: string }>) => void;
+  deleteTreinamentoRow: (id: string) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | null>(null);
@@ -57,6 +62,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   const [tecnicoProjects, setTecnicoProjects] = useState<TecnicoProject[]>([]);
   const [kanbanVariavelCards, setKanbanVariavelCards] = useState<KanbanVariavelCard[]>([]);
   const [renovacaoCards, setRenovacaoCards] = useState<RenovacaoCard[]>([]);
+  const [treinamentoRows, setTreinamentoRows] = useState<{ id: string; grupo: string; treinamento: string; data: string; aluno: string; instrutor: string }[]>([]);
 
   // Fetch all data from Supabase on mount
   useEffect(() => {
@@ -73,6 +79,8 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       if (kvRes.data) setKanbanVariavelCards(kvRes.data.map((k: any) => ({ ...k, createdAt: k.created_at || k.createdAt || "" })));
       if (msgRes.data) setMessages(msgRes.data.map((m: any) => ({ ...m, criado_em: m.criado_em || "" })));
       if (renRes.data) setRenovacaoCards(renRes.data.map((r: any) => ({ ...r, createdAt: r.created_at || "" })));
+      const treiRes = await supabase.from("medwork_treinamento_rows").select("*");
+      if (treiRes.data) setTreinamentoRows(treiRes.data);
     };
     load();
   }, []);
@@ -251,6 +259,24 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     await supabase.from("medwork_renovacao").update({ status }).eq("id", id);
   };
 
+  // --- Treinamento Rows ---
+  const addTreinamentoRow = async (row: Omit<{ id: string; grupo: string; treinamento: string; data: string; aluno: string; instrutor: string }, "id">) => {
+    const id = String(Date.now());
+    const newRow = { ...row, id };
+    setTreinamentoRows((prev) => [...prev, newRow]);
+    await supabase.from("medwork_treinamento_rows").insert(newRow);
+  };
+
+  const updateTreinamentoRow = async (id: string, data: Partial<{ treinamento: string; data: string; aluno: string; instrutor: string }>) => {
+    setTreinamentoRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...data } : r)));
+    await supabase.from("medwork_treinamento_rows").update(data).eq("id", id);
+  };
+
+  const deleteTreinamentoRow = async (id: string) => {
+    setTreinamentoRows((prev) => prev.filter((r) => r.id !== id));
+    await supabase.from("medwork_treinamento_rows").delete().eq("id", id);
+  };
+
   // --- Transfer ---
   const transferTecnicoToSector = async (tecnicoId: string, newSector: Sector, description: string, userId: string) => {
     const tp = tecnicoProjects.find(t => t.id === tecnicoId);
@@ -309,6 +335,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       addMessageAttachment,
       addKanbanVariavelCard, updateKanbanVariavelCard, deleteKanbanVariavelCard, updateKanbanVariavelStatus,
       renovacaoCards, addRenovacaoCard, updateRenovacaoCard, deleteRenovacaoCard, updateRenovacaoStatus,
+      treinamentoRows, addTreinamentoRow, updateTreinamentoRow, deleteTreinamentoRow,
       transferTecnicoToSector,
     }}>
       {children}

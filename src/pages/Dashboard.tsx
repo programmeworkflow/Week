@@ -282,6 +282,96 @@ const DiretoriaBoard = ({
   </div>
 );
 
+// Inline spreadsheet for Cremonese/Engetins
+const TreinamentoTable = ({ grupo }: { grupo: string }) => {
+  const { treinamentoRows, addTreinamentoRow, updateTreinamentoRow, deleteTreinamentoRow, users } = useProjects();
+  const rows = treinamentoRows.filter((r) => r.grupo === grupo);
+  const [adding, setAdding] = useState(false);
+  const [newRow, setNewRow] = useState({ treinamento: "", data: "", aluno: "", instrutor: "" });
+
+  const handleAdd = () => {
+    if (!newRow.treinamento) return;
+    addTreinamentoRow({ grupo, ...newRow });
+    setNewRow({ treinamento: "", data: "", aluno: "", instrutor: "" });
+    setAdding(false);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-2.5 mb-3">
+        <div className="w-6 h-6 rounded-lg bg-amber-400/10 flex items-center justify-center">
+          <Layers className="w-3 h-3 text-amber-400 stroke-[1.5]" />
+        </div>
+        <h3 className="text-[14px] font-semibold text-foreground">{grupo}</h3>
+        <Button variant="outline" size="sm" onClick={() => setAdding(true)} className="ml-auto h-7 text-[10px] gap-1 rounded-lg btn-3d neon-hover animate-float">
+          <Plus className="w-3 h-3" /> Adicionar
+        </Button>
+      </div>
+      <div className="bg-card rounded-xl border border-border overflow-hidden neon-card">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-border bg-gradient-to-r from-amber-400/5 to-amber-400/10">
+              <th className="text-left text-[10px] font-bold text-foreground px-3 py-2.5 uppercase tracking-wider">Treinamento</th>
+              <th className="text-left text-[10px] font-bold text-foreground px-3 py-2.5 uppercase tracking-wider w-28">Data</th>
+              <th className="text-left text-[10px] font-bold text-foreground px-3 py-2.5 uppercase tracking-wider">Aluno</th>
+              <th className="text-left text-[10px] font-bold text-foreground px-3 py-2.5 uppercase tracking-wider">Instrutor</th>
+              <th className="text-center text-[10px] font-bold text-foreground px-3 py-2.5 uppercase tracking-wider w-16">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={r.id} className={cn("border-b border-border/50 hover:bg-accent/30 transition-colors", i % 2 === 0 ? "" : "bg-muted/20")}>
+                <td className="px-3 py-1.5">
+                  <Input value={r.treinamento} onChange={(e) => updateTreinamentoRow(r.id, { treinamento: e.target.value })} className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
+                </td>
+                <td className="px-3 py-1.5">
+                  <Input value={r.data} onChange={(e) => updateTreinamentoRow(r.id, { data: e.target.value })} placeholder="dd/mm/aaaa" className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background w-28" />
+                </td>
+                <td className="px-3 py-1.5">
+                  <Input value={r.aluno} onChange={(e) => updateTreinamentoRow(r.id, { aluno: e.target.value })} className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
+                </td>
+                <td className="px-3 py-1.5">
+                  <Select value={r.instrutor} onValueChange={(v) => updateTreinamentoRow(r.id, { instrutor: v })}>
+                    <SelectTrigger className="h-7 text-xs rounded-lg border-border/50 bg-transparent"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>{users.map(u => <SelectItem key={u.id} value={u.full_name}>{u.full_name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </td>
+                <td className="px-3 py-1.5 text-center">
+                  <Button variant="ghost" size="icon" onClick={() => deleteTreinamentoRow(r.id)} className="h-6 w-6 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </td>
+              </tr>
+            ))}
+            {adding && (
+              <tr className="border-b border-primary/20 bg-primary/5">
+                <td className="px-3 py-1.5"><Input value={newRow.treinamento} onChange={(e) => setNewRow({ ...newRow, treinamento: e.target.value })} placeholder="Nome do treinamento" className="h-7 text-xs rounded-lg" autoFocus /></td>
+                <td className="px-3 py-1.5"><Input value={newRow.data} onChange={(e) => setNewRow({ ...newRow, data: e.target.value })} placeholder="dd/mm/aaaa" className="h-7 text-xs rounded-lg w-28" /></td>
+                <td className="px-3 py-1.5"><Input value={newRow.aluno} onChange={(e) => setNewRow({ ...newRow, aluno: e.target.value })} placeholder="Nome do aluno" className="h-7 text-xs rounded-lg" /></td>
+                <td className="px-3 py-1.5">
+                  <Select value={newRow.instrutor} onValueChange={(v) => setNewRow({ ...newRow, instrutor: v })}>
+                    <SelectTrigger className="h-7 text-xs rounded-lg"><SelectValue placeholder="Instrutor" /></SelectTrigger>
+                    <SelectContent>{users.map(u => <SelectItem key={u.id} value={u.full_name}>{u.full_name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </td>
+                <td className="px-3 py-1.5 text-center">
+                  <div className="flex gap-1 justify-center">
+                    <Button size="icon" onClick={handleAdd} className="h-6 w-6 rounded-lg bg-primary text-primary-foreground"><Plus className="w-3 h-3" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => setAdding(false)} className="h-6 w-6 rounded-lg"><X className="w-3 h-3" /></Button>
+                  </div>
+                </td>
+              </tr>
+            )}
+            {rows.length === 0 && !adding && (
+              <tr><td colSpan={5} className="text-center py-6 text-xs text-muted-foreground">Nenhum treinamento cadastrado.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { sector } = useParams<{ sector?: string }>();
@@ -815,6 +905,15 @@ const Dashboard = () => {
                 );
               })}
             </div>
+
+            {/* Planilhas Cremonese e Engetins - Comercial only */}
+            {isComercial && !isGeneralDashboard && (
+              <div className="mt-10 space-y-8 animate-fade-in">
+                {["Cremonese", "Engetins"].map((grupo) => (
+                  <TreinamentoTable key={grupo} grupo={grupo} />
+                ))}
+              </div>
+            )}
 
             {/* Renovation Board - Other sectors (not técnico, not comercial) */}
             {!isTecnico && !isComercial && !isPsicossocial && (
