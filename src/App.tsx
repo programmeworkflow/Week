@@ -16,6 +16,7 @@ import CalendarioTecnico from "./pages/CalendarioTecnico.tsx";
 import Arquivados from "./pages/Arquivados.tsx";
 import Premiacao from "./pages/Premiacao.tsx";
 import Procuracao from "./pages/Procuracao.tsx";
+import S2220 from "./pages/S2220.tsx";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/arquivados/:sector" element={<ProtectedRoute><Arquivados /></ProtectedRoute>} />
               <Route path="/premiacao" element={<ProtectedRoute><Premiacao /></ProtectedRoute>} />
               <Route path="/esocial/procuracao" element={<ProtectedRoute><Procuracao /></ProtectedRoute>} />
+              <Route path="/esocial/s2220" element={<ProtectedRoute><S2220 /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </ProjectProvider>

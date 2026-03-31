@@ -195,7 +195,11 @@ export const AppSidebar = () => {
                     <TooltipTrigger asChild>
                       <button
                         onClick={() => {
-                          if (id === "esocial") { navigate("/esocial/procuracao"); return; }
+                          if (id === "esocial") {
+                            if (collapsed) { navigate("/esocial/procuracao"); }
+                            else { toggleSector(id); if (!isExpanded) navigate("/esocial/procuracao"); }
+                            return;
+                          }
                           if (collapsed) { navigate(sectorDashPath); }
                           else {
                             toggleSector(id);
@@ -244,6 +248,7 @@ export const AppSidebar = () => {
                 {isExpanded && hasAccess && !collapsed && (
                   <div className={cn("ml-5 mt-0.5 space-y-0.5 border-l-2 pl-3 animate-fade-in", neon.border)}>
                     {id === "esocial" ? (
+                      <>
                       <Link
                         to="/esocial/procuracao"
                         className={cn(
@@ -256,6 +261,19 @@ export const AppSidebar = () => {
                         <FileCheck className="w-3.5 h-3.5 stroke-[1.5]" />
                         Procuração
                       </Link>
+                      <Link
+                        to="/esocial/s2220"
+                        className={cn(
+                          "flex items-center gap-2 px-2.5 py-1.5 rounded-[8px] text-xs transition-all duration-300",
+                          isActive("/esocial/s2220")
+                            ? `font-medium ${neon.active} ${neon.text}`
+                            : `text-muted-foreground ${neon.hover} hover:text-foreground`
+                        )}
+                      >
+                        <List className="w-3.5 h-3.5 stroke-[1.5]" />
+                        S-2220
+                      </Link>
+                      </>
                     ) : (
                     <>
                     <Link
