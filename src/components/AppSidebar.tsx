@@ -195,15 +195,10 @@ export const AppSidebar = () => {
                     <TooltipTrigger asChild>
                       <button
                         onClick={() => {
-                          if (id === "esocial") {
-                            if (collapsed) { navigate("/esocial/procuracao"); }
-                            else { toggleSector(id); if (!isExpanded) navigate("/esocial/procuracao"); }
-                            return;
-                          }
-                          if (collapsed) { navigate(sectorDashPath); }
-                          else {
+                          if (collapsed) {
+                            navigate(id === "esocial" ? "/esocial/procuracao" : sectorDashPath);
+                          } else {
                             toggleSector(id);
-                            if (!isExpanded) navigate(sectorDashPath);
                           }
                         }}
                         className={cn(

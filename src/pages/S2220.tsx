@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, FileCheck, ClipboardCheck, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, FileCheck, ClipboardCheck, AlertTriangle, Check, Edit2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface S2220Item {
@@ -15,6 +15,7 @@ interface S2220Item {
   ano: number;
   tipo: "verificacao" | "erro";
   conteudo: string;
+  concluido: boolean;
 }
 
 const meses = [
@@ -23,6 +24,67 @@ const meses = [
   "Mês 07 - Julho", "Mês 08 - Agosto", "Mês 09 - Setembro",
   "Mês 10 - Outubro", "Mês 11 - Novembro", "Mês 12 - Dezembro",
 ];
+
+const ItemRow = ({ item, onUpdate, onDelete }: { item: S2220Item; onUpdate: (id: string, data: Partial<S2220Item>) => void; onDelete: (id: string) => void }) => {
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState(item.conteudo);
+  const isErro = item.tipo === "erro";
+
+  const saveEdit = () => {
+    if (editValue.trim()) {
+      onUpdate(item.id, { conteudo: editValue.trim() });
+    }
+    setEditing(false);
+  };
+
+  return (
+    <div className={cn(
+      "flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all group",
+      item.concluido ? "bg-green-500/5 opacity-60" : "bg-muted/20 hover:bg-muted/40"
+    )}>
+      {/* Concluir */}
+      <button
+        onClick={() => onUpdate(item.id, { concluido: !item.concluido })}
+        className={cn(
+          "w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all",
+          item.concluido
+            ? "bg-green-500 border-green-500 text-white"
+            : isErro ? "border-red-300 dark:border-red-700 hover:border-red-500" : "border-blue-300 dark:border-blue-700 hover:border-blue-500"
+        )}
+      >
+        {item.concluido && <Check className="w-3 h-3" />}
+      </button>
+
+      {/* Conteudo */}
+      {editing ? (
+        <Input
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") setEditing(false); }}
+          className="h-6 text-xs rounded flex-1"
+          autoFocus
+        />
+      ) : (
+        <span className={cn("flex-1 text-foreground", item.concluido && "line-through text-muted-foreground")}>{item.conteudo}</span>
+      )}
+
+      {/* Actions */}
+      <div className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        {editing ? (
+          <>
+            <Button variant="ghost" size="icon" onClick={saveEdit} className="h-5 w-5 rounded text-green-500 hover:bg-green-500/10"><Check className="w-3 h-3" /></Button>
+            <Button variant="ghost" size="icon" onClick={() => setEditing(false)} className="h-5 w-5 rounded text-muted-foreground hover:bg-muted"><X className="w-3 h-3" /></Button>
+          </>
+        ) : (
+          <>
+            <Button variant="ghost" size="icon" onClick={() => { setEditValue(item.conteudo); setEditing(true); }} className="h-5 w-5 rounded text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10"><Edit2 className="w-3 h-3" /></Button>
+            <Button variant="ghost" size="icon" onClick={() => onDelete(item.id)} className="h-5 w-5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"><Trash2 className="w-3 h-3" /></Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const S2220 = () => {
   const { user, canAccessSector } = useAuth();
@@ -56,6 +118,7 @@ const S2220 = () => {
       ano: selectedAno,
       tipo,
       conteudo: conteudo.trim(),
+      concluido: false,
     };
     setItems(prev => [...prev, item]);
     await supabase.from("medwork_s2220_items").insert(item);
@@ -63,10 +126,18 @@ const S2220 = () => {
     else setNewErro("");
   };
 
+  const updateItem = async (id: string, data: Partial<S2220Item>) => {
+    setItems(prev => prev.map(i => i.id === id ? { ...i, ...data } : i));
+    await supabase.from("medwork_s2220_items").update(data).eq("id", id);
+  };
+
   const deleteItem = async (id: string) => {
     setItems(prev => prev.filter(i => i.id !== id));
     await supabase.from("medwork_s2220_items").delete().eq("id", id);
   };
+
+  const vConcluidas = verificacoes.filter(i => i.concluido).length;
+  const eConcluidos = erros.filter(i => i.concluido).length;
 
   return (
     <div className="min-h-screen flex">
@@ -110,24 +181,18 @@ const S2220 = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Left - Verificação Diária */}
             <div className="rounded-xl border border-border bg-background/50 overflow-hidden">
-              <div className="px-4 py-3 border-b border-border bg-gradient-to-r from-blue-500/5 to-blue-500/10">
+              <div className="px-4 py-3 border-b border-border bg-gradient-to-r from-blue-500/5 to-blue-500/10 flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <ClipboardCheck className="w-4 h-4 text-blue-500" />
                   Verificação Diária do 2220
                 </h3>
+                {verificacoes.length > 0 && (
+                  <span className="text-[10px] text-muted-foreground">{vConcluidas}/{verificacoes.length} concluídas</span>
+                )}
               </div>
-              <div className="p-3 space-y-2 max-h-[500px] overflow-y-auto">
-                {verificacoes.map((item, i) => (
-                  <div key={item.id} className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors",
-                    i % 2 === 0 ? "bg-muted/30" : "bg-muted/10"
-                  )}>
-                    <span className="w-5 h-5 rounded-full bg-blue-500/10 flex items-center justify-center text-[10px] font-bold text-blue-500 shrink-0">{i + 1}</span>
-                    <span className="flex-1 text-foreground">{item.conteudo}</span>
-                    <Button variant="ghost" size="icon" onClick={() => deleteItem(item.id)} className="h-5 w-5 rounded shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </div>
+              <div className="p-3 space-y-1.5 max-h-[500px] overflow-y-auto">
+                {verificacoes.map((item) => (
+                  <ItemRow key={item.id} item={item} onUpdate={updateItem} onDelete={deleteItem} />
                 ))}
                 {verificacoes.length === 0 && (
                   <p className="text-xs text-muted-foreground text-center py-6">Nenhuma verificação neste mês.</p>
@@ -149,24 +214,18 @@ const S2220 = () => {
 
             {/* Right - Erros de envio */}
             <div className="rounded-xl border border-border bg-background/50 overflow-hidden">
-              <div className="px-4 py-3 border-b border-border bg-gradient-to-r from-red-500/5 to-red-500/10">
+              <div className="px-4 py-3 border-b border-border bg-gradient-to-r from-red-500/5 to-red-500/10 flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-red-500" />
                   Erros de Envio
                 </h3>
+                {erros.length > 0 && (
+                  <span className="text-[10px] text-muted-foreground">{eConcluidos}/{erros.length} resolvidos</span>
+                )}
               </div>
-              <div className="p-3 space-y-2 max-h-[500px] overflow-y-auto">
-                {erros.map((item, i) => (
-                  <div key={item.id} className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors",
-                    i % 2 === 0 ? "bg-muted/30" : "bg-muted/10"
-                  )}>
-                    <span className="w-5 h-5 rounded-full bg-red-500/10 flex items-center justify-center text-[10px] font-bold text-red-500 shrink-0">{i + 1}</span>
-                    <span className="flex-1 text-foreground">{item.conteudo}</span>
-                    <Button variant="ghost" size="icon" onClick={() => deleteItem(item.id)} className="h-5 w-5 rounded shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </div>
+              <div className="p-3 space-y-1.5 max-h-[500px] overflow-y-auto">
+                {erros.map((item) => (
+                  <ItemRow key={item.id} item={item} onUpdate={updateItem} onDelete={deleteItem} />
                 ))}
                 {erros.length === 0 && (
                   <p className="text-xs text-muted-foreground text-center py-6">Nenhum erro neste mês.</p>
