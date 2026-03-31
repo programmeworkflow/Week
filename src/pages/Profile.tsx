@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useProjects } from "@/contexts/ProjectContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AddMemberModal } from "@/components/AddMemberModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,41 +13,62 @@ import { Trophy, Target, CheckCircle2, Clock, TrendingUp, Medal, AlertCircle, Pe
 import { User, SECTORS } from "@/lib/mock-data";
 
 const Profile = () => {
-  const { projects, getPoints, getMedals } = useProjects();
+  const { projects, tecnicoProjects } = useProjects();
   const { user, allUsers: users, updateProfile, deleteUser, updateUser } = useAuth();
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [editingSelf, setEditingSelf] = useState(false);
   const [selfForm, setSelfForm] = useState({ full_name: "", email: "", password: "" });
+  const [myPoints, setMyPoints] = useState(0);
+  const [myProjectsDone, setMyProjectsDone] = useState(0);
 
-  const notAuth = projects.filter((p) => p.status === "not_authenticated").length;
-  const notStarted = projects.filter((p) => p.status === "not_started").length;
-  const pending = projects.filter((p) => p.status === "pending").length;
-  const done = projects.filter((p) => p.status === "done").length;
-  const points = getPoints();
-  const medals = getMedals();
+  // Load personal points from Supabase
+  useEffect(() => {
+    if (!user) return;
+    const load = async () => {
+      // Search by user_id OR user_name (responsável name)
+      const { data } = await supabase.from("medwork_premiacao").select("*")
+        .or(`user_id.eq.${user.id},user_name.eq.${user.full_name}`);
+      if (data) {
+        setMyPoints(data.reduce((sum, e) => sum + (e.points || 0), 0));
+        setMyProjectsDone(data.length);
+      }
+    };
+    load();
+  }, [user]);
+
+  // Personal project stats (projects where user is responsible)
+  const myProjects = user ? projects.filter((p) => p.responsible_ids?.includes(user.id)) : [];
+  const myTecnico = user ? tecnicoProjects.filter((tp) => tp.responsavel === user.full_name) : [];
+  const notAuth = myProjects.filter((p) => p.status === "not_authenticated").length + myTecnico.filter(t => t.status_tecnico === "Não cadastradas no ESO").length;
+  const notStarted = myProjects.filter((p) => p.status === "not_started").length + myTecnico.filter(t => t.status_tecnico === "Não iniciadas" || t.status_tecnico === "Zona de espera").length;
+  const pending = myProjects.filter((p) => p.status === "pending" || p.status === "doc_pending" || p.status === "review").length + myTecnico.filter(t => ["Visita pendente", "Documentação pendente", "Revisão"].includes(t.status_tecnico)).length;
+  const done = myProjectsDone;
+
+  const medals = Math.floor(myPoints / 1000);
 
   const getLevel = () => {
-    if (done >= 70) return { name: "Elite", icon: Crown, color: "text-primary", bg: "bg-primary/10", progress: 100 };
-    if (done >= 31) return { name: "Alta Performance", icon: Zap, color: "text-amber-500", bg: "bg-amber-50", progress: Math.round(((done - 31) / 39) * 100) };
-    if (done >= 11) return { name: "Produtivo", icon: Award, color: "text-blue-500", bg: "bg-blue-50", progress: Math.round(((done - 11) / 19) * 100) };
-    return { name: "Iniciante", icon: Star, color: "text-muted-foreground", bg: "bg-muted", progress: Math.round((done / 10) * 100) };
+    if (myPoints >= 4500) return { name: "MEDWORKINO OFICIAL", icon: Crown, color: "text-yellow-400", bg: "bg-yellow-400/10", progress: 100 };
+    if (myPoints >= 2500) return { name: "Destaque MedWork", icon: Zap, color: "text-red-400", bg: "bg-red-400/10", progress: Math.round(((myPoints - 2500) / 2000) * 100) };
+    if (myPoints >= 1500) return { name: "Especialista", icon: Award, color: "text-purple-400", bg: "bg-purple-400/10", progress: Math.round(((myPoints - 1500) / 1000) * 100) };
+    if (myPoints >= 750) return { name: "Profissional", icon: Star, color: "text-cyan-400", bg: "bg-cyan-400/10", progress: Math.round(((myPoints - 750) / 750) * 100) };
+    return { name: "Iniciante", icon: TrendingUp, color: "text-emerald-400", bg: "bg-emerald-400/10", progress: Math.round((myPoints / 750) * 100) };
   };
 
   const level = getLevel();
   const LevelIcon = level.icon;
 
   const getFeedback = () => {
-    if (done > notStarted + pending) return { msg: "Excelente! Sua equipe está concluindo mais do que planejando. Continue assim! 🚀", type: "success" as const };
-    if (pending > done) return { msg: "Muitos projetos pendentes. Considere focar em concluí-los antes de iniciar novos.", type: "warning" as const };
-    return { msg: "Equilíbrio saudável entre planejamento e execução. Bom trabalho! 👏", type: "neutral" as const };
+    if (done > notStarted + pending) return { msg: "Excelente! Você está concluindo mais do que planejando. Continue assim!", type: "success" as const };
+    if (pending > done) return { msg: "Muitos projetos pendentes. Foque em concluí-los antes de iniciar novos.", type: "warning" as const };
+    return { msg: "Equilíbrio saudável entre planejamento e execução. Bom trabalho!", type: "neutral" as const };
   };
 
   const feedback = getFeedback();
 
   const stats = [
-    { label: "Não Autenticado", value: notAuth, icon: AlertCircle, color: "text-status-not-authenticated", bg: "bg-status-not-authenticated-bg" },
-    { label: "Não Iniciado", value: notStarted, icon: Clock, color: "text-status-not-started", bg: "bg-status-not-started-bg" },
+    { label: "Não Atribuídos", value: notAuth, icon: AlertCircle, color: "text-status-not-authenticated", bg: "bg-status-not-authenticated-bg" },
+    { label: "Não Iniciados", value: notStarted, icon: Clock, color: "text-status-not-started", bg: "bg-status-not-started-bg" },
     { label: "Pendentes", value: pending, icon: TrendingUp, color: "text-status-pending", bg: "bg-status-pending-bg" },
     { label: "Concluídos", value: done, icon: CheckCircle2, color: "text-status-done", bg: "bg-status-done-bg" },
   ];
@@ -123,7 +145,7 @@ const Profile = () => {
                   <Trophy className="w-4 h-4 text-accent-foreground stroke-[1.5]" />
                 </div>
                 <div>
-                  <div className="text-xl font-semibold text-foreground">{points}</div>
+                  <div className="text-xl font-semibold text-foreground">{myPoints}</div>
                   <div className="text-[13px] text-muted-foreground">Pontos</div>
                 </div>
               </CardContent>

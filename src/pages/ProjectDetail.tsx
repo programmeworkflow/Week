@@ -487,7 +487,7 @@ const ProjectDetail = () => {
                         </div>
                         <div className="space-y-2">
                           <Label>Email</Label>
-                          <Input value={f.contato_email} onChange={(e) => setForm((p: any) => ({ ...p, contato_email: e.target.value }))} className="rounded-xl" />
+                          <Input type="email" value={f.contato_email} onChange={(e) => setForm((p: any) => ({ ...p, contato_email: e.target.value }))} placeholder="email@exemplo.com" className="rounded-xl" />
                         </div>
                       </div>
                       <div className="space-y-2">
@@ -574,7 +574,7 @@ const ProjectDetail = () => {
                         </div>
                         <div className="space-y-2">
                           <Label>Email</Label>
-                          <Input value={f.contato_email} onChange={(e) => setForm((p: any) => ({ ...p, contato_email: e.target.value }))} className="rounded-xl" />
+                          <Input type="email" value={f.contato_email} onChange={(e) => setForm((p: any) => ({ ...p, contato_email: e.target.value }))} placeholder="email@exemplo.com" className="rounded-xl" />
                         </div>
                       </div>
                       <div className="space-y-2">
@@ -670,7 +670,7 @@ const ProjectDetail = () => {
                         </div>
                         <div className="space-y-2">
                           <Label>Email</Label>
-                          <Input value={f.contato_email} onChange={(e) => setForm((p: any) => ({ ...p, contato_email: e.target.value }))} className="rounded-xl" />
+                          <Input type="email" value={f.contato_email} onChange={(e) => setForm((p: any) => ({ ...p, contato_email: e.target.value }))} placeholder="email@exemplo.com" className="rounded-xl" />
                         </div>
                       </div>
                       <div className="space-y-2">

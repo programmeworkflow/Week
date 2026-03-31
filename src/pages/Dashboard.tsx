@@ -1101,7 +1101,7 @@ const Dashboard = () => {
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs">Email</Label>
-                        <Input value={editingTecnico.contato_email} onChange={(e) => setEditingTecnico({ ...editingTecnico, contato_email: e.target.value })} className="h-9 text-sm rounded-lg" />
+                        <Input type="email" value={editingTecnico.contato_email} onChange={(e) => setEditingTecnico({ ...editingTecnico, contato_email: e.target.value })} placeholder="email@exemplo.com" className="h-9 text-sm rounded-lg" />
                       </div>
                     </div>
                     <div className="space-y-1">

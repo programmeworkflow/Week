@@ -34,10 +34,10 @@ const rankColors = [
 const rankIcons = [Crown, Medal, Award];
 
 const getLevelInfo = (points: number) => {
-  if (points >= 5000) return { name: "Lendário", icon: Crown, color: "text-yellow-400", bg: "bg-yellow-400/10", border: "border-yellow-400/30" };
-  if (points >= 3000) return { name: "Elite", icon: Flame, color: "text-red-400", bg: "bg-red-400/10", border: "border-red-400/30" };
+  if (points >= 4500) return { name: "MEDWORKINO OFICIAL", icon: Crown, color: "text-yellow-400", bg: "bg-yellow-400/10", border: "border-yellow-400/30" };
+  if (points >= 2500) return { name: "Destaque MedWork", icon: Flame, color: "text-red-400", bg: "bg-red-400/10", border: "border-red-400/30" };
   if (points >= 1500) return { name: "Especialista", icon: Zap, color: "text-purple-400", bg: "bg-purple-400/10", border: "border-purple-400/30" };
-  if (points >= 500) return { name: "Profissional", icon: Star, color: "text-cyan-400", bg: "bg-cyan-400/10", border: "border-cyan-400/30" };
+  if (points >= 750) return { name: "Profissional", icon: Star, color: "text-cyan-400", bg: "bg-cyan-400/10", border: "border-cyan-400/30" };
   if (points >= 100) return { name: "Iniciante", icon: TrendingUp, color: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-400/30" };
   return { name: "Novato", icon: Target, color: "text-muted-foreground", bg: "bg-muted", border: "border-border" };
 };
