@@ -6,9 +6,10 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, FileCheck } from "lucide-react";
+import { Plus, Trash2, FileCheck, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCNPJ, formatTelefone } from "@/lib/formatters";
+import * as XLSX from "xlsx";
 
 interface ProcuracaoRow {
   id: string;
@@ -94,6 +95,24 @@ const Procuracao = () => {
     });
   }, [rows.map(r => r.procuracao_vencimento).join(",")]);
 
+  const exportExcel = () => {
+    const data = rows.map(r => ({
+      "Empresa": r.empresa,
+      "CNPJ/CPF": r.cnpj_cpf,
+      "Situação": r.situacao || "Em branco",
+      "Contrato": r.contrato,
+      "E-mail": r.email,
+      "Telefone": r.telefone,
+      "Procuração (Vencimento)": r.procuracao_vencimento,
+      "Contabilidade": r.contabilidade,
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws["!cols"] = [{ wch: 25 }, { wch: 20 }, { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 18 }, { wch: 15 }, { wch: 20 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Procurações");
+    XLSX.writeFile(wb, "procuracoes_esocial.xlsx");
+  };
+
   if (!user) return <Navigate to="/" replace />;
   if (!canAccessSector("esocial" as any) && !user.is_admin) return <Navigate to="/profile" replace />;
 
@@ -135,9 +154,14 @@ const Procuracao = () => {
             </h1>
             <p className="text-muted-foreground text-sm mt-1">Controle de procurações e situações</p>
           </div>
-          <Button onClick={() => setAdding(true)} className="gap-1.5 text-xs rounded-lg h-9 btn-3d neon-hover animate-float bg-primary text-primary-foreground">
-            <Plus className="w-3.5 h-3.5" /> Adicionar
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={exportExcel} className="gap-1.5 text-xs rounded-lg h-9 btn-3d neon-hover animate-float">
+              <Download className="w-3.5 h-3.5" /> Exportar Excel
+            </Button>
+            <Button onClick={() => setAdding(true)} className="gap-1.5 text-xs rounded-lg h-9 btn-3d neon-hover animate-float bg-primary text-primary-foreground">
+              <Plus className="w-3.5 h-3.5" /> Adicionar
+            </Button>
+          </div>
         </div>
 
         <div className="bg-card rounded-2xl border border-border overflow-hidden neon-card overflow-x-auto">

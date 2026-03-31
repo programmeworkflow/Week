@@ -195,6 +195,7 @@ export const AppSidebar = () => {
                     <TooltipTrigger asChild>
                       <button
                         onClick={() => {
+                          if (id === "esocial") { navigate("/esocial/procuracao"); return; }
                           if (collapsed) { navigate(sectorDashPath); }
                           else {
                             toggleSector(id);
