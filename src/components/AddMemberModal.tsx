@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { UserPlus, Shield } from "lucide-react";
 import { Sector, SECTORS, User } from "@/lib/mock-data";
+import { formatCPF } from "@/lib/formatters";
 
 interface AddMemberModalProps {
   editingUser?: User | null;
@@ -110,7 +111,7 @@ export const AddMemberModal = ({ editingUser, onClose }: AddMemberModalProps) =>
           </div>
           <div className="space-y-2">
             <Label>CPF</Label>
-            <Input value={form.cpf} onChange={(e) => setForm((p) => ({ ...p, cpf: e.target.value }))} placeholder="000.000.000-00" required />
+            <Input value={form.cpf} onChange={(e) => setForm((p) => ({ ...p, cpf: formatCPF(e.target.value) }))} placeholder="000.000.000-00" required />
           </div>
           <div className="space-y-2">
             <Label>Email Profissional</Label>

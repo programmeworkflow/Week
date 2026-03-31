@@ -8,16 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Layers, PinOff, RefreshCw } from "lucide-react";
 import { SECTORS, Sector } from "@/lib/mock-data";
+import { formatCNPJ, formatTelefone } from "@/lib/formatters";
 
-// CNPJ mask: 00.000.000/0000-00
-const formatCNPJ = (value: string): string => {
-  const digits = value.replace(/\D/g, "").slice(0, 14);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
-  if (digits.length <= 8) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`;
-  if (digits.length <= 12) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`;
-  return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
-};
 
 interface NewProjectModalProps {
   defaultSector?: Sector;
@@ -284,7 +276,7 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
               <Label>Telefone</Label>
               <Input
                 value={form.contato_telefone}
-                onChange={(e) => setForm((p) => ({ ...p, contato_telefone: e.target.value }))}
+                onChange={(e) => setForm((p) => ({ ...p, contato_telefone: formatTelefone(e.target.value) }))}
                 placeholder="(00) 00000-0000"
               />
             </div>

@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Project, Sector, TecnicoProject, KanbanVariavelCard, RenovacaoCard, RenovacaoStatus, ProjectAttachment, TECNICO_RESPONSAVEIS, TECNICO_PRIORIDADES, TECNICO_STATUS_OPTIONS } from "@/lib/mock-data";
 import { getBoardTitle } from "@/lib/sectors";
+import { formatCNPJ as fmtCNPJ, formatTelefone, formatDate as fmtDate } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { Download, RefreshCw, Crown, Filter, Copy, ArrowRightLeft, Plus, Layers, PinOff, Edit2, Trash2, X, Send, Mic, Square, Play, Pause, Paperclip, Archive } from "lucide-react";
 import { AchievementToast } from "@/components/AchievementToast";
@@ -325,16 +326,13 @@ const TreinamentoTable = ({ grupo }: { grupo: string }) => {
                   <Input value={r.treinamento} onChange={(e) => updateTreinamentoRow(r.id, { treinamento: e.target.value })} className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
                 </td>
                 <td className="px-3 py-1.5">
-                  <Input value={r.data} onChange={(e) => updateTreinamentoRow(r.id, { data: e.target.value })} placeholder="dd/mm/aaaa" className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background w-28" />
+                  <Input value={r.data} onChange={(e) => updateTreinamentoRow(r.id, { data: fmtDate(e.target.value) })} placeholder="dd/mm/aaaa" className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background w-28" />
                 </td>
                 <td className="px-3 py-1.5">
                   <Input value={r.aluno} onChange={(e) => updateTreinamentoRow(r.id, { aluno: e.target.value })} className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
                 </td>
                 <td className="px-3 py-1.5">
-                  <Select value={r.instrutor} onValueChange={(v) => updateTreinamentoRow(r.id, { instrutor: v })}>
-                    <SelectTrigger className="h-7 text-xs rounded-lg border-border/50 bg-transparent"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    <SelectContent>{users.map(u => <SelectItem key={u.id} value={u.full_name}>{u.full_name}</SelectItem>)}</SelectContent>
-                  </Select>
+                  <Input value={r.instrutor} onChange={(e) => updateTreinamentoRow(r.id, { instrutor: e.target.value })} className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
                 </td>
                 <td className="px-3 py-1.5 text-center">
                   <Button variant="ghost" size="icon" onClick={() => deleteTreinamentoRow(r.id)} className="h-6 w-6 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10">
@@ -346,14 +344,9 @@ const TreinamentoTable = ({ grupo }: { grupo: string }) => {
             {adding && (
               <tr className="border-b border-primary/20 bg-primary/5">
                 <td className="px-3 py-1.5"><Input value={newRow.treinamento} onChange={(e) => setNewRow({ ...newRow, treinamento: e.target.value })} placeholder="Nome do treinamento" className="h-7 text-xs rounded-lg" autoFocus /></td>
-                <td className="px-3 py-1.5"><Input value={newRow.data} onChange={(e) => setNewRow({ ...newRow, data: e.target.value })} placeholder="dd/mm/aaaa" className="h-7 text-xs rounded-lg w-28" /></td>
+                <td className="px-3 py-1.5"><Input value={newRow.data} onChange={(e) => setNewRow({ ...newRow, data: fmtDate(e.target.value) })} placeholder="dd/mm/aaaa" className="h-7 text-xs rounded-lg w-28" /></td>
                 <td className="px-3 py-1.5"><Input value={newRow.aluno} onChange={(e) => setNewRow({ ...newRow, aluno: e.target.value })} placeholder="Nome do aluno" className="h-7 text-xs rounded-lg" /></td>
-                <td className="px-3 py-1.5">
-                  <Select value={newRow.instrutor} onValueChange={(v) => setNewRow({ ...newRow, instrutor: v })}>
-                    <SelectTrigger className="h-7 text-xs rounded-lg"><SelectValue placeholder="Instrutor" /></SelectTrigger>
-                    <SelectContent>{users.map(u => <SelectItem key={u.id} value={u.full_name}>{u.full_name}</SelectItem>)}</SelectContent>
-                  </Select>
-                </td>
+                <td className="px-3 py-1.5"><Input value={newRow.instrutor} onChange={(e) => setNewRow({ ...newRow, instrutor: e.target.value })} placeholder="Nome do instrutor" className="h-7 text-xs rounded-lg" /></td>
                 <td className="px-3 py-1.5 text-center">
                   <div className="flex gap-1 justify-center">
                     <Button size="icon" onClick={handleAdd} className="h-6 w-6 rounded-lg bg-primary text-primary-foreground"><Plus className="w-3 h-3" /></Button>
@@ -1086,7 +1079,7 @@ const Dashboard = () => {
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs">Telefone</Label>
-                        <Input value={editingTecnico.contato_telefone} onChange={(e) => setEditingTecnico({ ...editingTecnico, contato_telefone: e.target.value })} className="h-9 text-sm rounded-lg" />
+                        <Input value={editingTecnico.contato_telefone} onChange={(e) => setEditingTecnico({ ...editingTecnico, contato_telefone: formatTelefone(e.target.value) })} className="h-9 text-sm rounded-lg" />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs">Email</Label>

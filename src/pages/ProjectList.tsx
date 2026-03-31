@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { Project, Sector, TecnicoProject, TECNICO_RESPONSAVEIS, TECNICO_PRIORIDADES, TECNICO_STATUS_OPTIONS } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { getSectorTitle } from "@/lib/sectors";
+import { formatTelefone, formatDate as fmtDate3, formatCNPJ as fmtCNPJ3 } from "@/lib/formatters";
 import { ImportSpreadsheetModal } from "@/components/ImportSpreadsheetModal";
 import { Plus, Trash2, Save, Edit2, Eye, Filter, X } from "lucide-react";
 
@@ -220,11 +221,11 @@ const TecnicoSpreadsheet = () => {
             </div>
             <div>
               <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Data De</label>
-              <Input value={filterDataDe} onChange={(e) => setFilterDataDe(formatDateInput(e.target.value))} placeholder="dd/mm/aaaa" className="h-8 text-xs rounded-lg" />
+              <Input value={filterDataDe} onChange={(e) => setFilterDataDe(fmtDate3(e.target.value))} placeholder="dd/mm/aaaa" className="h-8 text-xs rounded-lg" />
             </div>
             <div>
               <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Data Até</label>
-              <Input value={filterDataAte} onChange={(e) => setFilterDataAte(formatDateInput(e.target.value))} placeholder="dd/mm/aaaa" className="h-8 text-xs rounded-lg" />
+              <Input value={filterDataAte} onChange={(e) => setFilterDataAte(fmtDate3(e.target.value))} placeholder="dd/mm/aaaa" className="h-8 text-xs rounded-lg" />
             </div>
           </div>
         </div>
@@ -286,7 +287,7 @@ const TecnicoSpreadsheet = () => {
                   <td className="px-3 py-2">
                     <Input
                       value={p.data}
-                      onChange={(e) => updateTecnicoProject(p.id, { data: formatDateInput(e.target.value) })}
+                      onChange={(e) => updateTecnicoProject(p.id, { data: fmtDate3(e.target.value) })}
                       placeholder="dd/mm/aaaa"
                       className={cn("h-8 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background transition-colors w-28", p.data && !isValidDate(p.data) && p.data.length === 10 ? "border-destructive" : "")}
                     />
@@ -341,7 +342,7 @@ const TecnicoSpreadsheet = () => {
                     </Select>
                   </td>
                   <td className="px-3 py-2">
-                    <Input value={newRow.data} onChange={(e) => setNewRow({ ...newRow, data: formatDateInput(e.target.value) })} placeholder="dd/mm/aaaa" className="h-8 text-xs rounded-lg w-28" />
+                    <Input value={newRow.data} onChange={(e) => setNewRow({ ...newRow, data: fmtDate3(e.target.value) })} placeholder="dd/mm/aaaa" className="h-8 text-xs rounded-lg w-28" />
                   </td>
                   <td className="px-3 py-2">
                     <Select value={newRow.status_tecnico} onValueChange={(v) => setNewRow({ ...newRow, status_tecnico: v as any })}>
@@ -451,7 +452,7 @@ const TecnicoSpreadsheet = () => {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Data</Label>
-                  <Input value={editingProject.data} onChange={(e) => setEditingProject({ ...editingProject, data: formatDateInput(e.target.value) })} placeholder="dd/mm/aaaa" className="h-9 text-sm rounded-lg" />
+                  <Input value={editingProject.data} onChange={(e) => setEditingProject({ ...editingProject, data: fmtDate3(e.target.value) })} placeholder="dd/mm/aaaa" className="h-9 text-sm rounded-lg" />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Status</Label>
@@ -470,7 +471,7 @@ const TecnicoSpreadsheet = () => {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Telefone</Label>
-                  <Input value={editingProject.contato_telefone} onChange={(e) => setEditingProject({ ...editingProject, contato_telefone: e.target.value })} className="h-9 text-sm rounded-lg" />
+                  <Input value={editingProject.contato_telefone} onChange={(e) => setEditingProject({ ...editingProject, contato_telefone: formatTelefone(e.target.value) })} className="h-9 text-sm rounded-lg" />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Email</Label>

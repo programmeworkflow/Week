@@ -17,6 +17,7 @@ import { ArrowLeft, Trash2, Send, Edit2, Copy, Mic, Square, Play, Pause, ArrowRi
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Project, SECTORS, Sector, ProjectAttachment, TecnicoProject, KanbanVariavelCard, TECNICO_RESPONSAVEIS, TECNICO_PRIORIDADES, TECNICO_STATUS_OPTIONS } from "@/lib/mock-data";
+import { formatTelefone, formatCNPJ as fmtCNPJ2, formatDate as fmtDate2 } from "@/lib/formatters";
 import { TransferSectorModal } from "@/components/TransferSectorModal";
 import { AchievementToast } from "@/components/AchievementToast";
 import { FileAttachmentButton, FileAttachmentList } from "@/components/FileAttachment";
@@ -482,7 +483,7 @@ const ProjectDetail = () => {
                         </div>
                         <div className="space-y-2">
                           <Label>Telefone</Label>
-                          <Input value={f.contato_telefone} onChange={(e) => setForm((p: any) => ({ ...p, contato_telefone: e.target.value }))} className="rounded-xl" />
+                          <Input value={f.contato_telefone} onChange={(e) => setForm((p: any) => ({ ...p, contato_telefone: formatTelefone(e.target.value) }))} className="rounded-xl" />
                         </div>
                         <div className="space-y-2">
                           <Label>Email</Label>
@@ -569,7 +570,7 @@ const ProjectDetail = () => {
                         </div>
                         <div className="space-y-2">
                           <Label>Telefone</Label>
-                          <Input value={f.contato_telefone} onChange={(e) => setForm((p: any) => ({ ...p, contato_telefone: e.target.value }))} className="rounded-xl" />
+                          <Input value={f.contato_telefone} onChange={(e) => setForm((p: any) => ({ ...p, contato_telefone: formatTelefone(e.target.value) }))} className="rounded-xl" />
                         </div>
                         <div className="space-y-2">
                           <Label>Email</Label>
@@ -665,7 +666,7 @@ const ProjectDetail = () => {
                         </div>
                         <div className="space-y-2">
                           <Label>Telefone</Label>
-                          <Input value={f.contato_telefone} onChange={(e) => setForm((p: any) => ({ ...p, contato_telefone: e.target.value }))} className="rounded-xl" />
+                          <Input value={f.contato_telefone} onChange={(e) => setForm((p: any) => ({ ...p, contato_telefone: formatTelefone(e.target.value) }))} className="rounded-xl" />
                         </div>
                         <div className="space-y-2">
                           <Label>Email</Label>
