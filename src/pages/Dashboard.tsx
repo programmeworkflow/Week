@@ -435,7 +435,7 @@ const Dashboard = () => {
   const isComercial = sector === "comercial";
 
   if (sector && !canAccessSector(sector as Sector)) {
-    return <Navigate to="/dashboard/projects" replace />;
+    return <Navigate to="/profile" replace />;
   }
 
   const getTecnicoKanbanProjects = (): Project[] => {
@@ -996,7 +996,7 @@ const Dashboard = () => {
                     users={users}
                     onDrop={isTecnico ? handleTecnicoDrop : handleDrop}
                     locked={isGeneralDashboard}
-                    onCardClick={isTecnico ? handleTecnicoCardClick : undefined}
+                    onCardClick={isTecnico ? handleTecnicoCardClick : (p) => navigate(`/projeto/${p.id}`)}
                     extraClass={isTecnico ? tecnicoColumnColors[col.status] || "" : ""}
                     maxCards={MAX_CARDS_FIXOS}
                     onViewAll={handleViewAll}
