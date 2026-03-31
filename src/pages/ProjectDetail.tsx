@@ -263,10 +263,10 @@ const ProjectDetail = () => {
   const handleTransferSector = (newSector: Sector, description: string, newResponsaveis: string[]) => {
     if (isTecnico) {
       transferTecnicoToSector(projectId, newSector, description, user?.id || "1");
-      // Update responsible_ids on the new project
+      // Update responsible_ids and mark as transferred
       setTimeout(() => {
         const newProj = projects.find(p => p.project_name === tecnicoProject?.empresa && p.sector === newSector);
-        if (newProj && newResponsaveis.length) updateProject(newProj.id, { responsible_ids: newResponsaveis } as any);
+        if (newProj) updateProject(newProj.id, { responsible_ids: newResponsaveis.length ? newResponsaveis : [], transferred: true } as any);
       }, 500);
       navigate(-1);
     } else if (isRegular) {
@@ -275,7 +275,7 @@ const ProjectDetail = () => {
         usuario_id: user?.id || "1",
         conteudo: `Projeto transferido para ${SECTORS.find(s => s.id === newSector)?.label}. Motivo: ${description}`,
       });
-      updateProject(projectId, { sector: newSector, responsible_ids: newResponsaveis.length ? newResponsaveis : regularProject!.responsible_ids } as any);
+      updateProject(projectId, { sector: newSector, responsible_ids: newResponsaveis.length ? newResponsaveis : regularProject!.responsible_ids, transferred: true } as any);
     }
   };
 

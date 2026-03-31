@@ -302,6 +302,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       sector: newSector,
       responsible_ids: [],
       created_at: new Date().toISOString(),
+      transferred: true,
     };
 
     setProjects(prev => [...prev, newProject]);

@@ -20,7 +20,7 @@ import { getBoardTitle } from "@/lib/sectors";
 import { formatCNPJ as fmtCNPJ, formatTelefone, formatDate as fmtDate } from "@/lib/formatters";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
-import { Download, RefreshCw, Crown, Filter, Copy, ArrowRightLeft, Plus, Layers, PinOff, Edit2, Trash2, X, Send, Mic, Square, Play, Pause, Paperclip, Archive } from "lucide-react";
+import { Download, RefreshCw, Crown, Filter, Copy, ArrowRightLeft, Plus, Layers, PinOff, Edit2, Trash2, X, Send, Mic, Square, Play, Pause, Paperclip, Archive, ChevronDown } from "lucide-react";
 import { AchievementToast } from "@/components/AchievementToast";
 import { FileAttachmentButton, FileAttachmentList } from "@/components/FileAttachment";
 import { format } from "date-fns";
@@ -48,6 +48,12 @@ const variavelColumns: { title: string; status: Project["status"] }[] = [
   { title: "Em andamento", status: "pending" },
   { title: "Revisão", status: "review" },
   { title: "Finalizada", status: "done" },
+];
+
+const transferidoColumns: { title: string; status: Project["status"] }[] = [
+  { title: "Não iniciado", status: "not_started" },
+  { title: "Em andamento", status: "pending" },
+  { title: "Finalizado", status: "done" },
 ];
 
 const comercialColumns: { title: string; status: Project["status"] }[] = [
@@ -405,6 +411,7 @@ const Dashboard = () => {
   const [viewingTecnico, setViewingTecnico] = useState<TecnicoProject | null>(null);
   const [editingTecnico, setEditingTecnico] = useState<TecnicoProject | null>(null);
   const [showAchievement, setShowAchievement] = useState(false);
+  const [showTransferidos, setShowTransferidos] = useState(false);
   const [achievementName, setAchievementName] = useState("");
   const [addingVariavel, setAddingVariavel] = useState(false);
   const [newVariavel, setNewVariavel] = useState({ title: "", description: "", prioridade: "Média" as any });
@@ -491,8 +498,9 @@ const Dashboard = () => {
     ? sectorProjects
     : sectorProjects.filter((p) => p.responsible_ids.includes(filter));
 
-  const mainProjects = filtered.filter((p) => !p.is_renovation && p.status !== "archived");
-  const renovationProjects = filtered.filter((p) => p.is_renovation && p.status !== "archived");
+  const mainProjects = filtered.filter((p) => !p.is_renovation && !(p as any).transferred && p.status !== "archived");
+  const renovationProjects = filtered.filter((p) => p.is_renovation && !(p as any).transferred && p.status !== "archived");
+  const transferidoProjects = !isTecnico && sector ? filtered.filter((p) => (p as any).transferred && p.status !== "archived") : [];
   const variavelProjects = isTecnico ? getVariavelProjects().filter((p: any) => p.status !== "archived") : [];
 
   // Auto-archive: tecnico projects in "done"/"Finalizada" for 3+ days
@@ -861,6 +869,53 @@ const Dashboard = () => {
                     })}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Quadro Variáveis - Transferred projects (all sectors except técnico) */}
+            {!isTecnico && !isGeneralDashboard && sector && (
+              <div className="mb-6 animate-fade-in">
+                <button
+                  onClick={() => setShowTransferidos(!showTransferidos)}
+                  className="flex items-center gap-2.5 mb-4 w-full text-left"
+                >
+                  <div className="w-7 h-7 rounded-[10px] bg-orange-400/10 flex items-center justify-center">
+                    <PinOff className="w-3.5 h-3.5 text-orange-400 stroke-[1.5]" />
+                  </div>
+                  <h2 className="text-[15px] font-semibold text-foreground">Quadro Variáveis</h2>
+                  <span className="text-[10px] text-muted-foreground">(projetos recebidos de outros setores)</span>
+                  {transferidoProjects.length > 0 && (
+                    <span className="ml-1 w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
+                      {transferidoProjects.length}
+                    </span>
+                  )}
+                  <ChevronDown className={cn("w-4 h-4 text-muted-foreground ml-auto transition-transform", showTransferidos && "rotate-180")} />
+                </button>
+                {showTransferidos && (
+                  <div className={`bg-card rounded-[12px] border p-5 neon-card shadow-[0_0_15px_rgba(251,146,60,0.15)] border-orange-400/20`}>
+                    <div className="flex gap-5 overflow-x-auto pb-2 snap-x snap-mandatory md:snap-none">
+                      {transferidoColumns.map((col) => {
+                        const colProjects = transferidoProjects.filter((p) => p.status === col.status);
+                        return (
+                          <PaginatedKanbanColumn
+                            key={`transf-${col.status}`}
+                            col={col}
+                            projects={colProjects}
+                            users={users}
+                            onDrop={handleDrop}
+                            locked={false}
+                            maxCards={10}
+                            onViewAll={handleViewAll}
+                            onCardClick={(p) => navigate(`/projeto/${p.id}`)}
+                          />
+                        );
+                      })}
+                    </div>
+                    {transferidoProjects.length === 0 && (
+                      <p className="text-xs text-muted-foreground text-center py-4">Nenhum projeto transferido para este setor.</p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
