@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { Project, User, ProjectMessage, ProjectAttachment, Sector, TecnicoProject, KanbanVariavelCard, RenovacaoCard, RenovacaoStatus } from "@/lib/mock-data";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProjectContextType {
   projects: Project[];
@@ -50,8 +51,8 @@ export const useProjects = () => {
 };
 
 export const ProjectProvider = ({ children }: { children: ReactNode }) => {
+  const { allUsers: users, addUser, updateUser, deleteUser } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
   const [messages, setMessages] = useState<ProjectMessage[]>([]);
   const [tecnicoProjects, setTecnicoProjects] = useState<TecnicoProject[]>([]);
   const [kanbanVariavelCards, setKanbanVariavelCards] = useState<KanbanVariavelCard[]>([]);
@@ -60,15 +61,13 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   // Fetch all data from Supabase on mount
   useEffect(() => {
     const load = async () => {
-      const [usersRes, projRes, tecRes, kvRes, msgRes, renRes] = await Promise.all([
-        supabase.from("medwork_users").select("*"),
+      const [projRes, tecRes, kvRes, msgRes, renRes] = await Promise.all([
         supabase.from("medwork_projects").select("*"),
         supabase.from("medwork_tecnico_projects").select("*"),
         supabase.from("medwork_kanban_variavel").select("*"),
         supabase.from("medwork_messages").select("*"),
         supabase.from("medwork_renovacao").select("*"),
       ]);
-      if (usersRes.data) setUsers(usersRes.data.map((u: any) => ({ ...u, sectors: u.sectors || [] })));
       if (projRes.data) setProjects(projRes.data.map((p: any) => ({ ...p, responsible_ids: p.responsible_ids || [] })));
       if (tecRes.data) setTecnicoProjects(tecRes.data);
       if (kvRes.data) setKanbanVariavelCards(kvRes.data.map((k: any) => ({ ...k, createdAt: k.created_at || k.createdAt || "" })));
@@ -123,22 +122,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     await supabase.from("medwork_messages").delete().eq("projeto_id", id);
   };
 
-  // --- Users (kept for backward compat, auth manages users primarily) ---
-  const addUser = async (user: Omit<User, "id">) => {
-    const id = String(Date.now());
-    setUsers((prev) => [...prev, { ...user, id }]);
-    await supabase.from("medwork_users").insert({ ...user, id });
-  };
-
-  const updateUser = async (id: string, data: Partial<Omit<User, "id">>) => {
-    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...data } : u)));
-    await supabase.from("medwork_users").update(data).eq("id", id);
-  };
-
-  const deleteUser = async (id: string) => {
-    setUsers((prev) => prev.filter((u) => u.id !== id));
-    await supabase.from("medwork_users").delete().eq("id", id);
-  };
+  // Users come from AuthContext (addUser, updateUser, deleteUser passed through)
 
   // --- Messages ---
   const addMessage = async (msg: Omit<ProjectMessage, "id" | "criado_em">) => {
