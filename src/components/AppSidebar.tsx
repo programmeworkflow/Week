@@ -127,7 +127,7 @@ export const AppSidebar = () => {
         {/* Logo */}
         <div className={cn("px-4 py-4 flex items-center border-b border-border", collapsed ? "flex-col gap-2 px-2" : "justify-between")}>
           <Link to="/dashboard/projects" className={cn("flex items-center gap-2.5", collapsed && "justify-center")}>
-            <div className={cn("rounded-[10px] overflow-hidden", collapsed ? "w-8 h-8" : "w-10 h-10")}>
+            <div className={cn("rounded-[10px] overflow-hidden", collapsed ? "w-9 h-9" : "w-12 h-12")}>
               <img src={medworkLogo} alt="MedWork" className="w-full h-full object-contain" />
             </div>
             {!collapsed && (
