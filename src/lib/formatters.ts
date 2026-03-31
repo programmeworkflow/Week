@@ -33,6 +33,13 @@ export const formatDate = (value: string): string => {
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 };
 
+// CNPJ ou CPF automático: até 11 dígitos = CPF, mais = CNPJ
+export const formatCNPJorCPF = (value: string): string => {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length <= 11) return formatCPF(value);
+  return formatCNPJ(value);
+};
+
 // Email validation: must contain @
 export const isValidEmail = (value: string): boolean => {
   return value.includes("@");

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, FileCheck, Download, Upload, Filter, X, ArrowDownAZ, ArrowUpZA } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatCNPJ, formatTelefone } from "@/lib/formatters";
+import { formatCNPJorCPF, formatTelefone, formatDate as fmtDate } from "@/lib/formatters";
 import * as XLSX from "xlsx";
 
 interface ProcuracaoRow {
@@ -61,12 +61,6 @@ const getSituacaoColor = (sit: string) => {
   return "";
 };
 
-const formatDateInput = (value: string): string => {
-  const digits = value.replace(/\D/g, "").slice(0, 8);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-};
 
 const Procuracao = () => {
   const { user, canAccessSector } = useAuth();
@@ -319,7 +313,7 @@ const Procuracao = () => {
                     <Input value={r.empresa} onChange={(e) => updateRow(r.id, { empresa: e.target.value })} className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
                   </td>
                   <td className="px-3 py-1.5">
-                    <Input value={r.cnpj_cpf} onChange={(e) => updateRow(r.id, { cnpj_cpf: formatCNPJ(e.target.value) })} placeholder="00.000.000/0000-00" className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
+                    <Input value={r.cnpj_cpf} onChange={(e) => updateRow(r.id, { cnpj_cpf: formatCNPJorCPF(e.target.value) })} placeholder="CNPJ ou CPF" className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
                   </td>
                   <td className="px-3 py-1.5">
                     <Select value={r.situacao || "vazio"} onValueChange={(v) => updateRow(r.id, { situacao: v === "vazio" ? "" : v })}>
@@ -333,7 +327,7 @@ const Procuracao = () => {
                     </Select>
                   </td>
                   <td className="px-3 py-1.5">
-                    <Input value={r.contrato} onChange={(e) => updateRow(r.id, { contrato: e.target.value })} className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
+                    <Input value={r.contrato} onChange={(e) => updateRow(r.id, { contrato: fmtDate(e.target.value) })} placeholder="dd/mm/aaaa" className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
                   </td>
                   <td className="px-3 py-1.5">
                     <Input type="email" value={r.email} onChange={(e) => updateRow(r.id, { email: e.target.value })} placeholder="email@exemplo.com" className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
@@ -344,7 +338,7 @@ const Procuracao = () => {
                   <td className="px-3 py-1.5">
                     <Input
                       value={r.procuracao_vencimento}
-                      onChange={(e) => updateRow(r.id, { procuracao_vencimento: formatDateInput(e.target.value) })}
+                      onChange={(e) => updateRow(r.id, { procuracao_vencimento: fmtDate(e.target.value) })}
                       placeholder="dd/mm/aaaa"
                       className={cn("h-7 text-xs rounded-lg border-border/50 font-medium", getProcuracaoColor(r.procuracao_vencimento))}
                     />
@@ -362,7 +356,7 @@ const Procuracao = () => {
               {adding && (
                 <tr className="border-b border-primary/20 bg-primary/5">
                   <td className="px-3 py-1.5"><Input value={newRow.empresa} onChange={(e) => setNewRow({ ...newRow, empresa: e.target.value })} placeholder="Nome da empresa" className="h-7 text-xs rounded-lg" autoFocus /></td>
-                  <td className="px-3 py-1.5"><Input value={newRow.cnpj_cpf} onChange={(e) => setNewRow({ ...newRow, cnpj_cpf: formatCNPJ(e.target.value) })} placeholder="00.000.000/0000-00" className="h-7 text-xs rounded-lg" /></td>
+                  <td className="px-3 py-1.5"><Input value={newRow.cnpj_cpf} onChange={(e) => setNewRow({ ...newRow, cnpj_cpf: formatCNPJorCPF(e.target.value) })} placeholder="CNPJ ou CPF" className="h-7 text-xs rounded-lg" /></td>
                   <td className="px-3 py-1.5">
                     <Select value={newRow.situacao || "vazio"} onValueChange={(v) => setNewRow({ ...newRow, situacao: v === "vazio" ? "" : v })}>
                       <SelectTrigger className="h-7 text-xs rounded-lg"><SelectValue placeholder="Situação" /></SelectTrigger>
@@ -374,10 +368,10 @@ const Procuracao = () => {
                       </SelectContent>
                     </Select>
                   </td>
-                  <td className="px-3 py-1.5"><Input value={newRow.contrato} onChange={(e) => setNewRow({ ...newRow, contrato: e.target.value })} placeholder="Contrato" className="h-7 text-xs rounded-lg" /></td>
+                  <td className="px-3 py-1.5"><Input value={newRow.contrato} onChange={(e) => setNewRow({ ...newRow, contrato: fmtDate(e.target.value) })} placeholder="dd/mm/aaaa" className="h-7 text-xs rounded-lg" /></td>
                   <td className="px-3 py-1.5"><Input type="email" value={newRow.email} onChange={(e) => setNewRow({ ...newRow, email: e.target.value })} placeholder="email@exemplo.com" className="h-7 text-xs rounded-lg" /></td>
                   <td className="px-3 py-1.5"><Input value={newRow.telefone} onChange={(e) => setNewRow({ ...newRow, telefone: formatTelefone(e.target.value) })} placeholder="(00) 00000-0000" className="h-7 text-xs rounded-lg" /></td>
-                  <td className="px-3 py-1.5"><Input value={newRow.procuracao_vencimento} onChange={(e) => setNewRow({ ...newRow, procuracao_vencimento: formatDateInput(e.target.value) })} placeholder="dd/mm/aaaa" className="h-7 text-xs rounded-lg" /></td>
+                  <td className="px-3 py-1.5"><Input value={newRow.procuracao_vencimento} onChange={(e) => setNewRow({ ...newRow, procuracao_vencimento: fmtDate(e.target.value) })} placeholder="dd/mm/aaaa" className="h-7 text-xs rounded-lg" /></td>
                   <td className="px-3 py-1.5"><Input value={newRow.contabilidade} onChange={(e) => setNewRow({ ...newRow, contabilidade: e.target.value })} placeholder="Contabilidade" className="h-7 text-xs rounded-lg" /></td>
                   <td className="px-3 py-1.5 text-center">
                     <div className="flex gap-1 justify-center">
