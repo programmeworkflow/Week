@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProjects } from "@/contexts/ProjectContext";
 import { Navigate, useParams } from "react-router-dom";
 import { getSectorTitle } from "@/lib/sectors";
 import { Sector } from "@/lib/mock-data";
@@ -48,6 +49,7 @@ const CalendarioTecnico = () => {
   const { sector: sectorParam } = useParams<{ sector: string }>();
   const currentSector = (sectorParam || "tecnico") as Sector;
   const { user, canAccessSector } = useAuth();
+  const { users } = useProjects();
   const [baseMonth, setBaseMonth] = useState(new Date());
   const [compromissos, setCompromissos] = useState<Compromisso[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -103,13 +105,15 @@ const CalendarioTecnico = () => {
     tipoCarro: "" as "" | "mobi" | "alugado",
     usarDataShow: false,
     tipo: "" as "" | "treinamento" | "visita" | "reuniao" | "compromisso",
+    paraEmail: "",
+    paraNome: "",
   });
 
   if (!user) return <Navigate to="/" replace />;
   if (!canAccessSector(currentSector) && !user.is_admin) return <Navigate to="/dashboard/projects" replace />;
 
   const resetForm = () => {
-    setFormData({ data: "", horaInicio: "", horaFim: "", usarCarro: false, tipoCarro: "", usarDataShow: false, tipo: "" });
+    setFormData({ data: "", horaInicio: "", horaFim: "", usarCarro: false, tipoCarro: "", usarDataShow: false, tipo: "", paraEmail: "", paraNome: "" });
     setEditingId(null);
   };
 
@@ -118,7 +122,7 @@ const CalendarioTecnico = () => {
     setModalOpen(true);
   };
 
-  const openEdit = (c: Compromisso) => {
+  const openEdit = (c: Compromisso & { paraEmail?: string; paraNome?: string }) => {
     setFormData({
       data: format(c.data, "yyyy-MM-dd"),
       horaInicio: c.horaInicio,
@@ -127,6 +131,8 @@ const CalendarioTecnico = () => {
       tipoCarro: c.tipoCarro || "",
       usarDataShow: c.usarDataShow,
       tipo: c.tipo,
+      paraEmail: c.paraEmail || "",
+      paraNome: c.paraNome || "",
     });
     setEditingId(c.id);
     setSelectedEvent(null);
@@ -155,15 +161,18 @@ const CalendarioTecnico = () => {
       tipo: formData.tipo, usar_carro: formData.usarCarro,
       tipo_carro: formData.tipoCarro || "", usar_data_show: formData.usarDataShow,
       criado_por: user.full_name, instrutor: "", origem: "manual",
+      para_email: formData.paraEmail, para_nome: formData.paraNome,
     };
 
     // Google Calendar sync
+    const attendees = formData.paraEmail ? [formData.paraEmail] : [];
     const gcalEvent = {
-      summary: `${getTipoLabel(formData.tipo as any)}${compromisso.instrutor ? ` - ${compromisso.instrutor}` : ""}`,
+      summary: `${getTipoLabel(formData.tipo as any)}${formData.paraNome ? ` - ${formData.paraNome}` : ""}`,
       date: formData.data,
       startTime: formData.horaInicio,
       endTime: formData.horaFim,
-      description: `Criado por: ${user.full_name}\nOrigem: MedWork`,
+      description: `Criado por: ${user.full_name}${formData.paraNome ? `\nPara: ${formData.paraNome}` : ""}\nOrigem: MedWork`,
+      attendees,
     };
 
     if (editingId) {
@@ -479,6 +488,21 @@ const CalendarioTecnico = () => {
                 </div>
               </>
             )}
+            {/* Para quem (convidado Google Calendar) */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Para quem? (notificação no Google)</Label>
+              <Select value={formData.paraNome} onValueChange={(v) => {
+                const u = users.find(u => u.full_name === v);
+                setFormData({ ...formData, paraNome: v, paraEmail: u?.email || "" });
+              }}>
+                <SelectTrigger className="h-9 rounded-lg text-xs"><SelectValue placeholder="Selecione a pessoa" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Ninguém (só eu)</SelectItem>
+                  {users.map(u => <SelectItem key={u.id} value={u.full_name}>{u.full_name} ({u.email})</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex gap-2 pt-2">
               <Button variant="outline" onClick={() => { setModalOpen(false); resetForm(); }} className="flex-1 h-9 rounded-lg text-xs btn-3d neon-hover animate-float">
                 Cancelar

@@ -77,6 +77,7 @@ export const createGoogleEvent = async (event: {
   startTime?: string; // HH:mm
   endTime?: string; // HH:mm
   description?: string;
+  attendees?: string[]; // emails dos convidados
 }) => {
   const hasTime = event.startTime && event.startTime !== "A confirmar";
   const body: any = {
@@ -90,6 +91,12 @@ export const createGoogleEvent = async (event: {
       ],
     },
   };
+
+  if (event.attendees?.length) {
+    body.attendees = event.attendees.map(email => ({ email }));
+    body.guestsCanModify = false;
+    body.sendUpdates = "all";
+  }
 
   if (hasTime) {
     const start = `${event.date}T${event.startTime}:00`;
@@ -111,12 +118,18 @@ export const updateGoogleEvent = async (eventId: string, event: {
   startTime?: string;
   endTime?: string;
   description?: string;
+  attendees?: string[];
 }) => {
   const hasTime = event.startTime && event.startTime !== "A confirmar";
   const body: any = {
     summary: event.summary,
     description: event.description || "Criado pelo MedWork",
   };
+
+  if (event.attendees?.length) {
+    body.attendees = event.attendees.map(email => ({ email }));
+    body.sendUpdates = "all";
+  }
 
   if (hasTime) {
     const start = `${event.date}T${event.startTime}:00`;
