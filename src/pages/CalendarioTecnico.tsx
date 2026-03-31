@@ -49,7 +49,7 @@ const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const CalendarioTecnico = () => {
   const { sector: sectorParam } = useParams<{ sector: string }>();
   const currentSector = (sectorParam || "tecnico") as Sector;
-  const { user, canAccessSector, updateProfile } = useAuth();
+  const { user, canAccessSector } = useAuth();
   const { users } = useProjects();
   const [baseMonth, setBaseMonth] = useState(new Date());
   const [compromissos, setCompromissos] = useState<Compromisso[]>([]);
@@ -87,14 +87,11 @@ const CalendarioTecnico = () => {
     try {
       await initGoogleAuth();
       setGoogleConnected(true);
-      // Get Google email and update user profile
+      // Save Google email only for calendar notifications (NOT login email)
       const googleEmail = await getGoogleEmail();
       if (googleEmail && user) {
-        // Save google_email for calendar notifications
-        await supabase.from("medwork_users").update({ google_email: googleEmail, email: googleEmail }).eq("id", user.id);
-        // Update profile in AuthContext so login uses new email
-        updateProfile({ email: googleEmail });
-        toast.success(`Google conectado! Seu email foi atualizado para ${googleEmail}`);
+        await supabase.from("medwork_users").update({ google_email: googleEmail }).eq("id", user.id);
+        toast.success(`Google Calendar conectado! (${googleEmail})`);
       }
     } catch (err) {
       console.error("Erro ao conectar Google:", err);
