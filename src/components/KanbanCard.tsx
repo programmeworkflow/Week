@@ -23,13 +23,38 @@ export const KanbanCard = ({ project, users, index, locked, onCardClick, renderE
     startX: 0, startY: 0, el: null, clone: null, dragging: false,
   });
 
+  const scrollIntervalRef = useRef<number | null>(null);
+
+  const startAutoScroll = () => {
+    const handler = (e: DragEvent) => {
+      const threshold = 80;
+      const speed = 15;
+      const y = e.clientY;
+      const h = window.innerHeight;
+      if (y < threshold) {
+        window.scrollBy(0, -speed);
+      } else if (y > h - threshold) {
+        window.scrollBy(0, speed);
+      }
+    };
+    document.addEventListener("dragover", handler);
+    return handler;
+  };
+
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData("projectId", project.id);
     e.currentTarget.classList.add("opacity-40");
+    const handler = startAutoScroll();
+    (e.currentTarget as any)._autoScrollHandler = handler;
   };
 
   const handleDragEnd = (e: React.DragEvent) => {
     e.currentTarget.classList.remove("opacity-40");
+    const handler = (e.currentTarget as any)._autoScrollHandler;
+    if (handler) {
+      document.removeEventListener("dragover", handler);
+      delete (e.currentTarget as any)._autoScrollHandler;
+    }
   };
 
   const handleClick = () => {
