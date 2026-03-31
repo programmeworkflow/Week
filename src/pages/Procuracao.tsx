@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, FileCheck, Download, Upload, Filter, X } from "lucide-react";
+import { Plus, Trash2, FileCheck, Download, Upload, Filter, X, ArrowDownAZ, ArrowUpZA } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCNPJ, formatTelefone } from "@/lib/formatters";
 import * as XLSX from "xlsx";
@@ -90,6 +90,8 @@ const Procuracao = () => {
   const [fProcuracao, setFProcuracao] = useState("");
   const [fContabilidade, setFContabilidade] = useState("");
 
+  const [sortOrder, setSortOrder] = useState<"" | "az" | "za">("");
+
   const hasFilters = fEmpresa || fCnpj || fSituacao !== "all" || fContrato || fEmail || fTelefone || fProcuracao || fContabilidade;
   const clearFilters = () => { setFEmpresa(""); setFCnpj(""); setFSituacao("all"); setFContrato(""); setFEmail(""); setFTelefone(""); setFProcuracao(""); setFContabilidade(""); setPage(1); };
 
@@ -103,6 +105,10 @@ const Procuracao = () => {
     if (fProcuracao && !r.procuracao_vencimento.includes(fProcuracao)) return false;
     if (fContabilidade && !r.contabilidade.toLowerCase().includes(fContabilidade.toLowerCase())) return false;
     return true;
+  }).sort((a, b) => {
+    if (sortOrder === "az") return a.empresa.localeCompare(b.empresa, "pt-BR");
+    if (sortOrder === "za") return b.empresa.localeCompare(a.empresa, "pt-BR");
+    return 0;
   });
 
   useEffect(() => {
@@ -226,6 +232,10 @@ const Procuracao = () => {
               <Filter className="w-3.5 h-3.5" /> Filtros {hasFilters && `(${filteredRows.length})`}
             </Button>
             {hasFilters && <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 text-xs text-muted-foreground"><X className="w-3.5 h-3.5" /></Button>}
+            <Button variant="outline" onClick={() => setSortOrder(prev => prev === "az" ? "za" : "az")} className={cn("gap-1.5 text-xs rounded-lg h-9", sortOrder && "border-primary text-primary")}>
+              {sortOrder === "za" ? <ArrowUpZA className="w-3.5 h-3.5" /> : <ArrowDownAZ className="w-3.5 h-3.5" />}
+              {sortOrder === "az" ? "A → Z" : sortOrder === "za" ? "Z → A" : "Classificar"}
+            </Button>
             <Button variant="outline" onClick={exportExcel} className="gap-1.5 text-xs rounded-lg h-9 btn-3d neon-hover animate-float">
               <Download className="w-3.5 h-3.5" /> Exportar Excel
             </Button>

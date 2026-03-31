@@ -792,7 +792,7 @@ const Dashboard = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos</SelectItem>
-                      {[...users.filter(u => u.sectors?.includes("tecnico" as any)).map(u => u.full_name), "Zona de espera"].map((r) => (
+                      {users.filter(u => u.sectors?.includes("tecnico" as any)).map(u => u.full_name).map((r) => (
                         <SelectItem key={r} value={r}>{r}</SelectItem>
                       ))}
                     </SelectContent>
