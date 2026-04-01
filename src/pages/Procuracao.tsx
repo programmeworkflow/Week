@@ -57,7 +57,7 @@ const getProcuracaoColor = (dateStr: string) => {
 const getSituacaoColor = (sit: string) => {
   if (sit === "Expirada") return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
   if (sit === "Ativa") return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-  if (sit === "Aguardando resposta") return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
+  if (sit === "Aguardando") return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
   return "";
 };
 
@@ -118,7 +118,7 @@ const Procuracao = () => {
       if (data) {
         // Auto-update situacao on load (batch, no individual DB calls)
         const updated = data.map((r: any) => {
-          if (!r.procuracao_vencimento || r.situacao === "Aguardando resposta") return r;
+          if (!r.procuracao_vencimento || r.situacao === "Aguardando") return r;
           const autoSit = getSituacaoFromDate(r.procuracao_vencimento);
           if (autoSit && r.situacao !== autoSit) return { ...r, situacao: autoSit };
           return r;
@@ -188,7 +188,7 @@ const Procuracao = () => {
   const addRow = async () => {
     if (!newRow.empresa) return;
     const id = String(Date.now());
-    const autoSit = newRow.situacao === "Aguardando resposta" ? "Aguardando resposta" : (newRow.procuracao_vencimento ? getSituacaoFromDate(newRow.procuracao_vencimento) : newRow.situacao);
+    const autoSit = newRow.situacao === "Aguardando" ? "Aguardando" : (newRow.procuracao_vencimento ? getSituacaoFromDate(newRow.procuracao_vencimento) : newRow.situacao);
     const row = { ...newRow, id, situacao: autoSit || newRow.situacao };
     setRows((prev) => [...prev, row]);
     await supabase.from("medwork_procuracoes").insert(row);
@@ -201,7 +201,7 @@ const Procuracao = () => {
   const updateRow = (id: string, data: Partial<ProcuracaoRow>) => {
     if (data.procuracao_vencimento) {
       const current = rows.find(r => r.id === id);
-      if (current?.situacao !== "Aguardando resposta") {
+      if (current?.situacao !== "Aguardando") {
         const autoSit = getSituacaoFromDate(data.procuracao_vencimento);
         if (autoSit) data.situacao = autoSit;
       }
@@ -309,6 +309,7 @@ const Procuracao = () => {
           <table className="w-full min-w-[1100px]">
             <thead>
               <tr className="border-b border-border bg-gradient-to-r from-blue-500/5 to-blue-500/10">
+                <th className="text-center text-[10px] font-bold text-foreground px-2 py-2.5 uppercase tracking-wider w-10" title="Aguardando resposta">📋</th>
                 <th className="text-left text-[10px] font-bold text-foreground px-3 py-2.5 uppercase tracking-wider">Empresa</th>
                 <th className="text-left text-[10px] font-bold text-foreground px-3 py-2.5 uppercase tracking-wider w-40">CNPJ/CPF</th>
                 <th className="text-left text-[10px] font-bold text-foreground px-3 py-2.5 uppercase tracking-wider w-36">Situação</th>
@@ -322,7 +323,10 @@ const Procuracao = () => {
             </thead>
             <tbody>
               {filteredRows.slice((page - 1) * PER_PAGE, page * PER_PAGE).map((r, i) => (
-                <tr key={r.id} className={cn("border-b border-border/50 hover:bg-accent/30 transition-colors", i % 2 === 0 ? "" : "bg-muted/20")}>
+                <tr key={r.id} className={cn("border-b border-border/50 hover:bg-accent/30 transition-colors", r.situacao === "Aguardando" ? "bg-yellow-100/80 dark:bg-yellow-900/20" : i % 2 === 0 ? "" : "bg-muted/20")}>
+                  <td className="px-2 py-1.5 text-center">
+                    <input type="checkbox" checked={r.situacao === "Aguardando"} onChange={(e) => updateRow(r.id, { situacao: e.target.checked ? "Aguardando" : (getSituacaoFromDate(r.procuracao_vencimento) || "") })} className="w-4 h-4 rounded border-border accent-yellow-500 cursor-pointer" title="Aguardando resposta" />
+                  </td>
                   <td className="px-3 py-1.5">
                     <Input value={r.empresa} onChange={(e) => updateRow(r.id, { empresa: e.target.value })} className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
                   </td>
@@ -334,7 +338,6 @@ const Procuracao = () => {
                       <SelectTrigger className={cn("h-7 text-xs rounded-lg border-border/50", getSituacaoColor(r.situacao))}><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="vazio">Em branco</SelectItem>
-                        <SelectItem value="Aguardando resposta">Aguardando resposta</SelectItem>
                         <SelectItem value="Expirada">Expirada</SelectItem>
                         <SelectItem value="Ativa">Ativa</SelectItem>
                       </SelectContent>
@@ -369,6 +372,9 @@ const Procuracao = () => {
               ))}
               {adding && (
                 <tr className="border-b border-primary/20 bg-primary/5">
+                  <td className="px-2 py-1.5 text-center">
+                    <input type="checkbox" checked={newRow.situacao === "Aguardando"} onChange={(e) => setNewRow({ ...newRow, situacao: e.target.checked ? "Aguardando" : "" })} className="w-4 h-4 rounded border-border accent-yellow-500 cursor-pointer" title="Aguardando resposta" />
+                  </td>
                   <td className="px-3 py-1.5"><Input value={newRow.empresa} onChange={(e) => setNewRow({ ...newRow, empresa: e.target.value })} placeholder="Nome da empresa" className="h-7 text-xs rounded-lg" autoFocus /></td>
                   <td className="px-3 py-1.5"><Input value={newRow.cnpj_cpf} onChange={(e) => setNewRow({ ...newRow, cnpj_cpf: formatCNPJorCPF(e.target.value) })} placeholder="CNPJ ou CPF" className="h-7 text-xs rounded-lg" /></td>
                   <td className="px-3 py-1.5">
@@ -376,7 +382,6 @@ const Procuracao = () => {
                       <SelectTrigger className="h-7 text-xs rounded-lg"><SelectValue placeholder="Situação" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="vazio">Em branco</SelectItem>
-                        <SelectItem value="Aguardando resposta">Aguardando resposta</SelectItem>
                         <SelectItem value="Expirada">Expirada</SelectItem>
                         <SelectItem value="Ativa">Ativa</SelectItem>
                       </SelectContent>
@@ -396,7 +401,7 @@ const Procuracao = () => {
                 </tr>
               )}
               {filteredRows.length === 0 && !adding && (
-                <tr><td colSpan={9} className="text-center py-8 text-sm text-muted-foreground">Nenhuma procuração cadastrada.</td></tr>
+                <tr><td colSpan={10} className="text-center py-8 text-sm text-muted-foreground">Nenhuma procuração cadastrada.</td></tr>
               )}
             </tbody>
           </table>
