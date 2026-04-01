@@ -198,7 +198,7 @@ const Procuracao = () => {
 
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
-  const updateRow = (id: string, data: Partial<ProcuracaoRow>) => {
+  const updateRow = (id: string, data: Partial<ProcuracaoRow>, immediate = false) => {
     if (data.procuracao_vencimento) {
       const current = rows.find(r => r.id === id);
       if (current?.situacao !== "Aguardando") {
@@ -207,6 +207,10 @@ const Procuracao = () => {
       }
     }
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...data } : r)));
+    if (immediate) {
+      supabase.from("medwork_procuracoes").update(data).eq("id", id);
+      return;
+    }
     // Debounce DB save (500ms)
     if (saveTimers.current[id]) clearTimeout(saveTimers.current[id]);
     saveTimers.current[id] = setTimeout(() => {
@@ -325,7 +329,7 @@ const Procuracao = () => {
               {filteredRows.slice((page - 1) * PER_PAGE, page * PER_PAGE).map((r, i) => (
                 <tr key={r.id} className={cn("border-b border-border/50 hover:bg-accent/30 transition-colors", r.situacao === "Aguardando" ? "bg-yellow-100/80 dark:bg-yellow-900/20" : i % 2 === 0 ? "" : "bg-muted/20")}>
                   <td className="px-2 py-1.5 text-center">
-                    <input type="checkbox" checked={r.situacao === "Aguardando"} onChange={(e) => updateRow(r.id, { situacao: e.target.checked ? "Aguardando" : (getSituacaoFromDate(r.procuracao_vencimento) || "") })} className="w-4 h-4 rounded border-border accent-yellow-500 cursor-pointer" title="Aguardando resposta" />
+                    <input type="checkbox" checked={r.situacao === "Aguardando"} onChange={(e) => updateRow(r.id, { situacao: e.target.checked ? "Aguardando" : (getSituacaoFromDate(r.procuracao_vencimento) || "") }, true)} className="w-4 h-4 rounded border-border accent-yellow-500 cursor-pointer" title="Aguardando resposta" />
                   </td>
                   <td className="px-3 py-1.5">
                     <Input value={r.empresa} onChange={(e) => updateRow(r.id, { empresa: e.target.value })} className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
@@ -334,7 +338,7 @@ const Procuracao = () => {
                     <Input value={r.cnpj_cpf} onChange={(e) => updateRow(r.id, { cnpj_cpf: formatCNPJorCPF(e.target.value) })} placeholder="CNPJ ou CPF" className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
                   </td>
                   <td className="px-3 py-1.5">
-                    <Select value={r.situacao || "vazio"} onValueChange={(v) => updateRow(r.id, { situacao: v === "vazio" ? "" : v })}>
+                    <Select value={r.situacao || "vazio"} onValueChange={(v) => updateRow(r.id, { situacao: v === "vazio" ? "" : v }, true)}>
                       <SelectTrigger className={cn("h-7 text-xs rounded-lg border-border/50", getSituacaoColor(r.situacao))}><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="vazio">Em branco</SelectItem>

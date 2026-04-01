@@ -18,7 +18,7 @@ interface NewProjectModalProps {
 export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
   const { addProject, addTecnicoProject, addKanbanVariavelCard, addRenovacaoCard, users } = useProjects();
   const [open, setOpen] = useState(false);
-  const [quadroTipo, setQuadroTipo] = useState<"fixo" | "variavel" | "renovacao" | "cipa">("fixo");
+  const [quadroTipo, setQuadroTipo] = useState<"fixo" | "variavel" | "renovacao">("fixo");
   const [form, setForm] = useState({
     project_name: "",
     description: "",
@@ -76,24 +76,6 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
         contato_email: form.contato_email,
         dados_extras: form.dados_extras,
         createdAt: new Date().toISOString(),
-      });
-    } else if (isTecnico && quadroTipo === "cipa") {
-      addKanbanVariavelCard({
-        title: form.project_name,
-        description: form.description,
-        status: "not_authenticated",
-        prioridade: form.prioridade,
-        createdAt: new Date().toISOString(),
-        empresa: form.project_name,
-        cnpj: form.cnpj,
-        responsavel: users.find((u) => form.responsible_ids[0] === u.id)?.full_name || "",
-        regiao: "",
-        data: form.due_date ? new Date(form.due_date).toLocaleDateString("pt-BR") : "",
-        status_tecnico: "CIPA",
-        contato_nome: form.contato_nome,
-        contato_telefone: form.contato_telefone,
-        contato_email: form.contato_email,
-        dados_extras: form.dados_extras,
       });
     } else if (isTecnico && quadroTipo === "fixo") {
       addTecnicoProject({
@@ -195,7 +177,7 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
           {isTecnico && (
             <div className="space-y-2 animate-fade-in">
               <Label>Tipo de Quadro</Label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setQuadroTipo("fixo")}
@@ -245,23 +227,6 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
                   <div>
                     <span className={`text-sm font-medium block ${quadroTipo === "renovacao" ? "text-orange-400" : "text-foreground"}`}>Renovação</span>
                     <span className="text-[10px] text-muted-foreground">Renovações e pendências</span>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuadroTipo("cipa")}
-                  className={`flex items-center gap-2.5 p-3 rounded-xl border-2 transition-all duration-300 text-left ${
-                    quadroTipo === "cipa"
-                      ? "border-emerald-400 bg-emerald-400/10 shadow-[0_0_12px_rgba(52,211,153,0.3)]"
-                      : "border-border hover:border-emerald-400/30 hover:bg-muted/50"
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${quadroTipo === "cipa" ? "bg-emerald-400/20" : "bg-muted"}`}>
-                    <Layers className={`w-4 h-4 ${quadroTipo === "cipa" ? "text-emerald-400" : "text-muted-foreground"}`} />
-                  </div>
-                  <div>
-                    <span className={`text-sm font-medium block ${quadroTipo === "cipa" ? "text-emerald-400" : "text-foreground"}`}>CIPA</span>
-                    <span className="text-[10px] text-muted-foreground">Comissão interna</span>
                   </div>
                 </button>
               </div>

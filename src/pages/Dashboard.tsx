@@ -56,12 +56,6 @@ const transferidoColumns: { title: string; status: Project["status"] }[] = [
   { title: "Finalizado", status: "done" },
 ];
 
-const cipaColumns: { title: string; status: Project["status"] }[] = [
-  { title: "Iniciar CIPA", status: "not_authenticated" },
-  { title: "Em andamento", status: "not_started" },
-  { title: "Agendar treinamento", status: "pending" },
-  { title: "Finalizada", status: "done" },
-];
 
 const comercialColumns: { title: string; status: Project["status"] }[] = [
   { title: "Enviar proposta", status: "not_authenticated" },
@@ -483,7 +477,6 @@ const Dashboard = () => {
   // Kanban Variáveis → Project format for display
   const getVariavelProjects = (): Project[] => {
     return kanbanVariavelCards
-      .filter(c => (c as any).status_tecnico !== "CIPA")
       .sort((a, b) => (PRIORITY_ORDER[a.prioridade] ?? 99) - (PRIORITY_ORDER[b.prioridade] ?? 99))
       .map(c => ({
         id: c.id,
@@ -512,11 +505,6 @@ const Dashboard = () => {
   const renovationProjects = filtered.filter((p) => p.is_renovation && !(p as any).transferred && p.status !== "archived");
   const transferidoProjects = !isTecnico && sector ? filtered.filter((p) => (p as any).transferred && p.status !== "archived") : [];
   const variavelProjects = isTecnico ? getVariavelProjects().filter((p: any) => p.status !== "archived") : [];
-  const cipaCards = isTecnico ? kanbanVariavelCards.filter(c => (c as any).status_tecnico === "CIPA" && c.status !== "archived") : [];
-  const cipaProjects: Project[] = cipaCards.map(c => ({
-    id: c.id, company_id: "1", project_name: c.title, description: c.description,
-    due_date: "2026-12-31", status: c.status, sector: "tecnico" as Sector, responsible_ids: [], created_at: c.createdAt,
-  }));
 
   // Auto-archive: tecnico projects in "done"/"Finalizada" for 3+ days
   useEffect(() => {
@@ -663,6 +651,55 @@ const Dashboard = () => {
 
   const handleVariavelCardClick = (project: Project) => {
     navigate(`/projeto/${project.id}?type=variavel`);
+  };
+
+  // Mover entre quadros dentro do setor
+  const moveTecnicoToVariavel = (projectId: string) => {
+    const tp = tecnicoProjects.find(t => t.id === projectId);
+    if (!tp) return;
+    addKanbanVariavelCard({
+      title: tp.empresa,
+      description: tp.dados_extras || "",
+      status: "not_started",
+      prioridade: tp.prioridade,
+      createdAt: new Date().toISOString(),
+      empresa: tp.empresa,
+      cnpj: tp.cnpj,
+      responsavel: tp.responsavel,
+      regiao: tp.regiao,
+      data: tp.data,
+      status_tecnico: "Não iniciadas",
+      contato_nome: tp.contato_nome,
+      contato_telefone: tp.contato_telefone,
+      contato_email: tp.contato_email,
+      dados_extras: tp.dados_extras,
+    });
+    deleteTecnicoProject(projectId);
+  };
+
+  const moveVariavelToTecnico = (projectId: string) => {
+    const card = kanbanVariavelCards.find(c => c.id === projectId);
+    if (!card) return;
+    addTecnicoProject({
+      empresa: card.empresa || card.title,
+      cnpj: card.cnpj || "",
+      responsavel: (card.responsavel || "") as any,
+      regiao: card.regiao || "",
+      prioridade: card.prioridade,
+      data: card.data || "",
+      status_tecnico: "Não cadastradas no ESO",
+      contato_nome: card.contato_nome || "",
+      contato_telefone: card.contato_telefone || "",
+      contato_email: card.contato_email || "",
+      dados_extras: card.dados_extras || card.description || "",
+    });
+    deleteKanbanVariavelCard(projectId);
+  };
+
+  const moveComercialBoard = (projectId: string) => {
+    const p = projects.find(pr => pr.id === projectId);
+    if (!p) return;
+    updateProject(projectId, { is_renovation: !p.is_renovation } as any);
   };
 
   const [archiveConfirm, setArchiveConfirm] = useState<{ id: string; name: string; type: "tecnico" | "variavel" } | null>(null);
@@ -926,14 +963,24 @@ const Dashboard = () => {
                           maxCards={MAX_CARDS_VARIAVEIS}
                           onViewAll={handleViewAll}
                           renderCardExtra={(project) => (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => { e.stopPropagation(); confirmArchiveVariavel(project.id, project.project_name); }}
-                              className="h-6 text-[10px] gap-1 text-muted-foreground hover:text-orange-400 mt-1 px-2"
-                            >
-                              <Archive className="w-3 h-3" /> Arquivar
-                            </Button>
+                            <div className="flex gap-1 mt-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => { e.stopPropagation(); moveVariavelToTecnico(project.id); }}
+                                className="h-6 text-[10px] gap-1 text-muted-foreground hover:text-primary px-2"
+                              >
+                                <ArrowRightLeft className="w-3 h-3" /> Empresas
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => { e.stopPropagation(); confirmArchiveVariavel(project.id, project.project_name); }}
+                                className="h-6 text-[10px] gap-1 text-muted-foreground hover:text-orange-400 px-2"
+                              >
+                                <Archive className="w-3 h-3" /> Arquivar
+                              </Button>
+                            </div>
                           )}
                         />
                       );
@@ -1014,41 +1061,16 @@ const Dashboard = () => {
                           locked={isGeneralDashboard}
                           maxCards={10}
                           onViewAll={handleViewAll}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Quadro CIPA - Técnico only */}
-            {isTecnico && !isGeneralDashboard && cipaProjects.length > 0 && (
-              <div className="mb-10 animate-fade-in">
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-7 h-7 rounded-[10px] bg-emerald-400/10 flex items-center justify-center">
-                    <Layers className="w-3.5 h-3.5 text-emerald-400 stroke-[1.5]" />
-                  </div>
-                  <h2 className="text-[15px] font-semibold text-foreground">CIPA</h2>
-                  <span className="text-[10px] text-muted-foreground">(comissão interna)</span>
-                  <span className="ml-1 w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center">{cipaProjects.length}</span>
-                </div>
-                <div className={`bg-card rounded-[12px] border p-5 neon-card shadow-[0_0_15px_rgba(52,211,153,0.15)] border-emerald-400/20`}>
-                  <div className="flex gap-5 overflow-x-auto pb-2 snap-x snap-mandatory md:snap-none">
-                    {cipaColumns.map((col) => {
-                      const colProjects = cipaProjects.filter((p) => p.status === col.status);
-                      return (
-                        <PaginatedKanbanColumn
-                          key={`cipa-${col.status}`}
-                          col={col}
-                          projects={colProjects}
-                          users={users}
-                          onDrop={handleVariavelDrop}
-                          locked={false}
-                          onCardClick={handleVariavelCardClick}
-                          extraClass={`border-t-2 border-t-emerald-400 shadow-[0_-2px_10px_rgba(52,211,153,0.3)]`}
-                          maxCards={10}
-                          onViewAll={handleViewAll}
+                          renderCardExtra={(project) => (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => { e.stopPropagation(); moveComercialBoard(project.id); }}
+                              className="h-6 text-[10px] gap-1 text-muted-foreground hover:text-amber-400 mt-1 px-2"
+                            >
+                              <ArrowRightLeft className="w-3 h-3" /> → Treinamentos
+                            </Button>
+                          )}
                         />
                       );
                     })}
@@ -1101,13 +1123,32 @@ const Dashboard = () => {
                     maxCards={MAX_CARDS_FIXOS}
                     onViewAll={handleViewAll}
                     renderCardExtra={isTecnico ? (project) => (
+                      <div className="flex gap-1 mt-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); moveTecnicoToVariavel(project.id); }}
+                          className="h-6 text-[10px] gap-1 text-muted-foreground hover:text-cyan-400 px-2"
+                        >
+                          <ArrowRightLeft className="w-3 h-3" /> Demanda
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); confirmArchiveTecnico(project.id, project.project_name); }}
+                          className="h-6 text-[10px] gap-1 text-muted-foreground hover:text-orange-400 px-2"
+                        >
+                          <Archive className="w-3 h-3" /> Arquivar
+                        </Button>
+                      </div>
+                    ) : isComercial ? (project) => (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={(e) => { e.stopPropagation(); confirmArchiveTecnico(project.id, project.project_name); }}
-                        className="h-6 text-[10px] gap-1 text-muted-foreground hover:text-orange-400 mt-1 px-2"
+                        onClick={(e) => { e.stopPropagation(); moveComercialBoard(project.id); }}
+                        className="h-6 text-[10px] gap-1 text-muted-foreground hover:text-amber-400 mt-1 px-2"
                       >
-                        <Archive className="w-3 h-3" /> Arquivar
+                        <ArrowRightLeft className="w-3 h-3" /> {project.is_renovation ? "→ Treinamentos" : "→ Comercial"}
                       </Button>
                     ) : undefined}
                   />
