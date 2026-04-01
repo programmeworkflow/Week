@@ -208,7 +208,11 @@ const Procuracao = () => {
     }
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...data } : r)));
     if (immediate) {
-      supabase.from("medwork_procuracoes").update(data).eq("id", id);
+      // Cancel any pending debounce for this row
+      if (saveTimers.current[id]) clearTimeout(saveTimers.current[id]);
+      supabase.from("medwork_procuracoes").update(data).eq("id", id).then(({ error }) => {
+        if (error) console.error("Save error:", error);
+      });
       return;
     }
     // Debounce DB save (500ms)
@@ -217,31 +221,6 @@ const Procuracao = () => {
       supabase.from("medwork_procuracoes").update(data).eq("id", id);
     }, 500);
   };
-
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  const saveAllSelections = async () => {
-    setSaving(true);
-    const aguardandoRows = rows.filter(r => r.situacao === "Aguardando");
-    const otherRows = rows.filter(r => r.situacao !== "Aguardando");
-    // Save all Aguardando rows
-    for (const r of aguardandoRows) {
-      await supabase.from("medwork_procuracoes").update({ situacao: "Aguardando" }).eq("id", r.id);
-    }
-    // Also save non-Aguardando rows that might have been unmarked
-    for (const r of otherRows) {
-      const autoSit = getSituacaoFromDate(r.procuracao_vencimento);
-      if (autoSit && r.situacao !== autoSit) {
-        await supabase.from("medwork_procuracoes").update({ situacao: autoSit }).eq("id", r.id);
-      }
-    }
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
-
-  const hasAguardando = rows.some(r => r.situacao === "Aguardando");
 
   const deleteRow = async (id: string) => {
     setRows((prev) => prev.filter((r) => r.id !== id));
@@ -265,11 +244,6 @@ const Procuracao = () => {
               <Filter className="w-3.5 h-3.5" /> Filtros {hasFilters && `(${filteredRows.length})`}
             </Button>
             {hasFilters && <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 text-xs text-muted-foreground"><X className="w-3.5 h-3.5" /></Button>}
-            {hasAguardando && (
-              <Button onClick={saveAllSelections} disabled={saving} className={cn("gap-1.5 text-xs rounded-lg h-9 btn-3d neon-hover animate-float", saved ? "bg-emerald-500 hover:bg-emerald-600" : "bg-primary")}>
-                <Save className="w-3.5 h-3.5" /> {saving ? "Salvando..." : saved ? "Salvo!" : "Salvar seleções"}
-              </Button>
-            )}
             <Button variant="outline" onClick={() => { setSortOrder(prev => prev === "az" ? "za" : "az"); setSortDate(""); }} className={cn("gap-1.5 text-xs rounded-lg h-9 btn-3d neon-hover animate-float", sortOrder && "border-primary text-primary")}>
               {sortOrder === "za" ? <ArrowUpZA className="w-3.5 h-3.5" /> : <ArrowDownAZ className="w-3.5 h-3.5" />}
               {sortOrder === "az" ? "Empresa A → Z" : sortOrder === "za" ? "Empresa Z → A" : "Empresa"}
