@@ -188,7 +188,7 @@ const Procuracao = () => {
   const addRow = async () => {
     if (!newRow.empresa) return;
     const id = String(Date.now());
-    const autoSit = newRow.procuracao_vencimento ? getSituacaoFromDate(newRow.procuracao_vencimento) : newRow.situacao;
+    const autoSit = newRow.situacao === "Aguardando resposta" ? "Aguardando resposta" : (newRow.procuracao_vencimento ? getSituacaoFromDate(newRow.procuracao_vencimento) : newRow.situacao);
     const row = { ...newRow, id, situacao: autoSit || newRow.situacao };
     setRows((prev) => [...prev, row]);
     await supabase.from("medwork_procuracoes").insert(row);
@@ -200,8 +200,11 @@ const Procuracao = () => {
 
   const updateRow = (id: string, data: Partial<ProcuracaoRow>) => {
     if (data.procuracao_vencimento) {
-      const autoSit = getSituacaoFromDate(data.procuracao_vencimento);
-      if (autoSit) data.situacao = autoSit;
+      const current = rows.find(r => r.id === id);
+      if (current?.situacao !== "Aguardando resposta") {
+        const autoSit = getSituacaoFromDate(data.procuracao_vencimento);
+        if (autoSit) data.situacao = autoSit;
+      }
     }
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...data } : r)));
     // Debounce DB save (500ms)
