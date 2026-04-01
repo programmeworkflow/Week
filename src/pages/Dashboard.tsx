@@ -829,14 +829,14 @@ const Dashboard = () => {
           </>
         ) : (
           <>
-            {/* Quadro Variáveis - Técnico only, independent */}
+            {/* Demanda Variáveis - Técnico only, independent */}
             {isTecnico && !isGeneralDashboard && (
               <div className="mb-10 animate-fade-in">
                 <button onClick={() => setShowDemandaAvulsa(!showDemandaAvulsa)} className="flex items-center gap-2.5 mb-4 w-full text-left">
                   <div className="w-7 h-7 rounded-[10px] bg-accent flex items-center justify-center">
                     <PinOff className="w-3.5 h-3.5 text-accent-foreground stroke-[1.5]" />
                   </div>
-                  <h2 className="text-[15px] font-semibold text-foreground">Demanda Avulsa</h2>
+                  <h2 className="text-[15px] font-semibold text-foreground">Demanda Variáveis</h2>
                   <span className="text-[10px] text-muted-foreground">(demandas avulsas independentes)</span>
                   {variavelProjects.length > 0 && (
                     <span className="ml-1 w-5 h-5 rounded-full bg-cyan-500 text-white text-[10px] font-bold flex items-center justify-center">{variavelProjects.length}</span>
@@ -879,7 +879,7 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* Quadro Variáveis - Transferred projects (all sectors except técnico) */}
+            {/* Demanda Variáveis - Transferred projects (all sectors except técnico) */}
             {!isTecnico && !isGeneralDashboard && sector && (
               <div className="mb-6 animate-fade-in">
                 <button
@@ -889,7 +889,7 @@ const Dashboard = () => {
                   <div className="w-7 h-7 rounded-[10px] bg-orange-400/10 flex items-center justify-center">
                     <PinOff className="w-3.5 h-3.5 text-orange-400 stroke-[1.5]" />
                   </div>
-                  <h2 className="text-[15px] font-semibold text-foreground">Quadro Variáveis</h2>
+                  <h2 className="text-[15px] font-semibold text-foreground">Demanda Variáveis</h2>
                   <span className="text-[10px] text-muted-foreground">(projetos recebidos de outros setores)</span>
                   {transferidoProjects.length > 0 && (
                     <span className="ml-1 w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
@@ -1092,6 +1092,9 @@ const Dashboard = () => {
                   <div><span className="text-muted-foreground text-xs">Telefone:</span><p className="font-medium">{viewingTecnico.contato_telefone || "—"}</p></div>
                   <div><span className="text-muted-foreground text-xs">Email:</span><p className="font-medium">{viewingTecnico.contato_email || "—"}</p></div>
                 </div>
+                {(viewingTecnico as any).description && (
+                  <div><span className="text-muted-foreground text-xs">Descrição:</span><p className="font-medium">{(viewingTecnico as any).description}</p></div>
+                )}
                 {viewingTecnico.dados_extras && (
                   <div><span className="text-muted-foreground text-xs">Dados extras:</span><p className="font-medium">{viewingTecnico.dados_extras}</p></div>
                 )}

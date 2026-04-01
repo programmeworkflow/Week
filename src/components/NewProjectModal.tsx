@@ -16,7 +16,7 @@ interface NewProjectModalProps {
 }
 
 export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
-  const { addProject, addKanbanVariavelCard, addRenovacaoCard, users } = useProjects();
+  const { addProject, addTecnicoProject, addKanbanVariavelCard, addRenovacaoCard, users } = useProjects();
   const [open, setOpen] = useState(false);
   const [quadroTipo, setQuadroTipo] = useState<"fixo" | "variavel" | "renovacao">("fixo");
   const [form, setForm] = useState({
@@ -76,6 +76,20 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
         contato_email: form.contato_email,
         dados_extras: form.dados_extras,
         createdAt: new Date().toISOString(),
+      });
+    } else if (isTecnico && quadroTipo === "fixo") {
+      addTecnicoProject({
+        empresa: form.project_name,
+        cnpj: form.cnpj,
+        responsavel: users.find((u) => form.responsible_ids[0] === u.id)?.full_name || "",
+        regiao: "",
+        prioridade: form.prioridade,
+        data: form.due_date ? new Date(form.due_date).toLocaleDateString("pt-BR") : "",
+        status_tecnico: "Não cadastradas no ESO",
+        contato_nome: form.contato_nome,
+        contato_telefone: form.contato_telefone,
+        contato_email: form.contato_email,
+        dados_extras: form.description ? `Descrição: ${form.description}${form.dados_extras ? `\n${form.dados_extras}` : ""}` : form.dados_extras,
       });
     } else {
       addProject({
@@ -194,7 +208,7 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
                     <PinOff className={`w-4 h-4 ${quadroTipo === "variavel" ? "text-cyan-400" : "text-muted-foreground"}`} />
                   </div>
                   <div>
-                    <span className={`text-sm font-medium block ${quadroTipo === "variavel" ? "text-cyan-400" : "text-foreground"}`}>Demanda Avulsa</span>
+                    <span className={`text-sm font-medium block ${quadroTipo === "variavel" ? "text-cyan-400" : "text-foreground"}`}>Demanda Variáveis</span>
                     <span className="text-[10px] text-muted-foreground">Demandas avulsas</span>
                   </div>
                 </button>
@@ -367,7 +381,7 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
           </div>
 
           <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-[10px] font-medium h-10 transition-all duration-200 btn-3d neon-hover">
-            {isTecnico && quadroTipo === "variavel" ? "Criar em Demanda Avulsa" : isTecnico && quadroTipo === "renovacao" ? "Criar em Renovação" : "Salvar Projeto"}
+            {isTecnico && quadroTipo === "variavel" ? "Criar em Demanda Variáveis" : isTecnico && quadroTipo === "renovacao" ? "Criar em Renovação" : "Salvar Projeto"}
           </Button>
         </form>
       </DialogContent>

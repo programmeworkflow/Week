@@ -236,11 +236,11 @@ const Procuracao = () => {
               <Filter className="w-3.5 h-3.5" /> Filtros {hasFilters && `(${filteredRows.length})`}
             </Button>
             {hasFilters && <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 text-xs text-muted-foreground"><X className="w-3.5 h-3.5" /></Button>}
-            <Button variant="outline" onClick={() => { setSortOrder(prev => prev === "az" ? "za" : "az"); setSortDate(""); }} className={cn("gap-1.5 text-xs rounded-lg h-9", sortOrder && "border-primary text-primary")}>
+            <Button variant="outline" onClick={() => { setSortOrder(prev => prev === "az" ? "za" : "az"); setSortDate(""); }} className={cn("gap-1.5 text-xs rounded-lg h-9 btn-3d neon-hover animate-float", sortOrder && "border-primary text-primary")}>
               {sortOrder === "za" ? <ArrowUpZA className="w-3.5 h-3.5" /> : <ArrowDownAZ className="w-3.5 h-3.5" />}
               {sortOrder === "az" ? "Empresa A → Z" : sortOrder === "za" ? "Empresa Z → A" : "Empresa"}
             </Button>
-            <Button variant="outline" onClick={() => { setSortDate(prev => prev === "az" ? "za" : "az"); setSortOrder(""); }} className={cn("gap-1.5 text-xs rounded-lg h-9", sortDate && "border-primary text-primary")}>
+            <Button variant="outline" onClick={() => { setSortDate(prev => prev === "az" ? "za" : "az"); setSortOrder(""); }} className={cn("gap-1.5 text-xs rounded-lg h-9 btn-3d neon-hover animate-float", sortDate && "border-primary text-primary")}>
               {sortDate === "za" ? <ArrowUpZA className="w-3.5 h-3.5" /> : <ArrowDownAZ className="w-3.5 h-3.5" />}
               {sortDate === "az" ? "Data A → Z" : sortDate === "za" ? "Data Z → A" : "Data"}
             </Button>

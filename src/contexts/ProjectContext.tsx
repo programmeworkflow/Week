@@ -58,7 +58,9 @@ export const useProjects = () => {
 export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   const { allUsers: users, addUser, updateUser, deleteUser } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [messages, setMessages] = useState<ProjectMessage[]>([]);
+  const [messages, setMessages] = useState<ProjectMessage[]>(() => {
+    try { return JSON.parse(localStorage.getItem("medwork_messages") || "[]"); } catch { return []; }
+  });
   const [tecnicoProjects, setTecnicoProjects] = useState<TecnicoProject[]>([]);
   const [kanbanVariavelCards, setKanbanVariavelCards] = useState<KanbanVariavelCard[]>([]);
   const [renovacaoCards, setRenovacaoCards] = useState<RenovacaoCard[]>([]);
@@ -67,17 +69,15 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   // Fetch all data from Supabase on mount
   useEffect(() => {
     const load = async () => {
-      const [projRes, tecRes, kvRes, msgRes, renRes] = await Promise.all([
+      const [projRes, tecRes, kvRes, renRes] = await Promise.all([
         supabase.from("medwork_projects").select("*"),
         supabase.from("medwork_tecnico_projects").select("*"),
         supabase.from("medwork_kanban_variavel").select("*"),
-        supabase.from("medwork_messages").select("*"),
         supabase.from("medwork_renovacao").select("*"),
       ]);
       if (projRes.data) setProjects(projRes.data.map((p: any) => ({ ...p, responsible_ids: p.responsible_ids || [] })));
       if (tecRes.data) setTecnicoProjects(tecRes.data);
       if (kvRes.data) setKanbanVariavelCards(kvRes.data.map((k: any) => ({ ...k, createdAt: k.created_at || k.createdAt || "" })));
-      if (msgRes.data) setMessages(msgRes.data.map((m: any) => ({ ...m, criado_em: m.criado_em || "" })));
       if (renRes.data) setRenovacaoCards(renRes.data.map((r: any) => ({ ...r, createdAt: r.created_at || "" })));
       const treiRes = await supabase.from("medwork_treinamento_rows").select("*");
       if (treiRes.data) setTreinamentoRows(treiRes.data);
@@ -125,9 +125,12 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteProject = async (id: string) => {
     setProjects((prev) => prev.filter((p) => p.id !== id));
-    setMessages((prev) => prev.filter((m) => m.projeto_id !== id));
+    setMessages((prev) => {
+      const updated = prev.filter((m) => m.projeto_id !== id);
+      localStorage.setItem("medwork_messages", JSON.stringify(updated));
+      return updated;
+    });
     await supabase.from("medwork_projects").delete().eq("id", id);
-    await supabase.from("medwork_messages").delete().eq("projeto_id", id);
   };
 
   // Users come from AuthContext (addUser, updateUser, deleteUser passed through)
@@ -137,8 +140,11 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     const id = String(Date.now());
     const criado_em = new Date().toISOString();
     const newMsg = { ...msg, id, criado_em };
-    setMessages((prev) => [...prev, newMsg]);
-    await supabase.from("medwork_messages").insert(newMsg);
+    setMessages((prev) => {
+      const updated = [...prev, newMsg];
+      localStorage.setItem("medwork_messages", JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const getProjectMessages = (projectId: string) => {
@@ -190,8 +196,11 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     const id = String(Date.now());
     const criado_em = new Date().toISOString();
     const newMsg = { ...msg, id, criado_em };
-    setMessages((prev) => [...prev, newMsg]);
-    await supabase.from("medwork_messages").insert({ id, projeto_id: msg.projeto_id, usuario_id: msg.usuario_id, conteudo: msg.conteudo, criado_em });
+    setMessages((prev) => {
+      const updated = [...prev, newMsg];
+      localStorage.setItem("medwork_messages", JSON.stringify(updated));
+      return updated;
+    });
   };
 
   // --- Kanban Variáveis ---
@@ -317,8 +326,11 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       conteudo: `📦 Projeto transferido de Setor Técnico para ${sectorLabel}. Motivo: ${description}`,
       criado_em: new Date().toISOString(),
     };
-    setMessages(prev => [...prev, msg]);
-    await supabase.from("medwork_messages").insert(msg);
+    setMessages(prev => {
+      const updated = [...prev, msg];
+      localStorage.setItem("medwork_messages", JSON.stringify(updated));
+      return updated;
+    });
 
     setTecnicoProjects(prev => prev.filter(t => t.id !== tecnicoId));
     await supabase.from("medwork_tecnico_projects").delete().eq("id", tecnicoId);
