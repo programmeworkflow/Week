@@ -85,6 +85,7 @@ const Procuracao = () => {
   const [fContabilidade, setFContabilidade] = useState("");
 
   const [sortOrder, setSortOrder] = useState<"" | "az" | "za">("");
+  const [sortDate, setSortDate] = useState<"" | "az" | "za">("");
 
   const hasFilters = fEmpresa || fCnpj || fSituacao !== "all" || fContrato || fEmail || fTelefone || fProcuracao || fContabilidade;
   const clearFilters = () => { setFEmpresa(""); setFCnpj(""); setFSituacao("all"); setFContrato(""); setFEmail(""); setFTelefone(""); setFProcuracao(""); setFContabilidade(""); setPage(1); };
@@ -102,6 +103,12 @@ const Procuracao = () => {
   }).sort((a, b) => {
     if (sortOrder === "az") return a.empresa.localeCompare(b.empresa, "pt-BR");
     if (sortOrder === "za") return b.empresa.localeCompare(a.empresa, "pt-BR");
+    if (sortDate) {
+      const toNum = (d: string) => { const p = d.split("/"); return p.length === 3 ? `${p[2]}${p[1]}${p[0]}` : ""; };
+      const da = toNum(a.procuracao_vencimento), db = toNum(b.procuracao_vencimento);
+      if (sortDate === "az") return da.localeCompare(db);
+      if (sortDate === "za") return db.localeCompare(da);
+    }
     return 0;
   });
 
@@ -226,9 +233,13 @@ const Procuracao = () => {
               <Filter className="w-3.5 h-3.5" /> Filtros {hasFilters && `(${filteredRows.length})`}
             </Button>
             {hasFilters && <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 text-xs text-muted-foreground"><X className="w-3.5 h-3.5" /></Button>}
-            <Button variant="outline" onClick={() => setSortOrder(prev => prev === "az" ? "za" : "az")} className={cn("gap-1.5 text-xs rounded-lg h-9", sortOrder && "border-primary text-primary")}>
+            <Button variant="outline" onClick={() => { setSortOrder(prev => prev === "az" ? "za" : "az"); setSortDate(""); }} className={cn("gap-1.5 text-xs rounded-lg h-9", sortOrder && "border-primary text-primary")}>
               {sortOrder === "za" ? <ArrowUpZA className="w-3.5 h-3.5" /> : <ArrowDownAZ className="w-3.5 h-3.5" />}
-              {sortOrder === "az" ? "A → Z" : sortOrder === "za" ? "Z → A" : "Classificar"}
+              {sortOrder === "az" ? "Empresa A → Z" : sortOrder === "za" ? "Empresa Z → A" : "Empresa"}
+            </Button>
+            <Button variant="outline" onClick={() => { setSortDate(prev => prev === "az" ? "za" : "az"); setSortOrder(""); }} className={cn("gap-1.5 text-xs rounded-lg h-9", sortDate && "border-primary text-primary")}>
+              {sortDate === "za" ? <ArrowUpZA className="w-3.5 h-3.5" /> : <ArrowDownAZ className="w-3.5 h-3.5" />}
+              {sortDate === "az" ? "Data A → Z" : sortDate === "za" ? "Data Z → A" : "Data"}
             </Button>
             <Button variant="outline" onClick={exportExcel} className="gap-1.5 text-xs rounded-lg h-9 btn-3d neon-hover animate-float">
               <Download className="w-3.5 h-3.5" /> Exportar Excel
