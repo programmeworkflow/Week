@@ -56,6 +56,13 @@ const transferidoColumns: { title: string; status: Project["status"] }[] = [
   { title: "Finalizado", status: "done" },
 ];
 
+const cipaColumns: { title: string; status: Project["status"] }[] = [
+  { title: "Iniciar CIPA", status: "not_authenticated" },
+  { title: "Em andamento", status: "not_started" },
+  { title: "Agendar treinamento", status: "pending" },
+  { title: "Finalizada", status: "done" },
+];
+
 const comercialColumns: { title: string; status: Project["status"] }[] = [
   { title: "Enviar proposta", status: "not_authenticated" },
   { title: "Fazer o contrato", status: "not_started" },
@@ -419,6 +426,7 @@ const Dashboard = () => {
   const [viewAllModal, setViewAllModal] = useState<{ title: string; projects: Project[] } | null>(null);
   const [editingVariavel, setEditingVariavel] = useState<KanbanVariavelCard | null>(null);
   const [viewingVariavel, setViewingVariavel] = useState<KanbanVariavelCard | null>(null);
+  const [transferNotification, setTransferNotification] = useState<string | null>(null);
   // Chat state for técnico edit dialog
   const [tecnicoChatInput, setTecnicoChatInput] = useState("");
   const [tecnicoChatAttachments, setTecnicoChatAttachments] = useState<Omit<ProjectAttachment, "id">[]>([]);
@@ -475,6 +483,7 @@ const Dashboard = () => {
   // Kanban Variáveis → Project format for display
   const getVariavelProjects = (): Project[] => {
     return kanbanVariavelCards
+      .filter(c => (c as any).status_tecnico !== "CIPA")
       .sort((a, b) => (PRIORITY_ORDER[a.prioridade] ?? 99) - (PRIORITY_ORDER[b.prioridade] ?? 99))
       .map(c => ({
         id: c.id,
@@ -503,17 +512,21 @@ const Dashboard = () => {
   const renovationProjects = filtered.filter((p) => p.is_renovation && !(p as any).transferred && p.status !== "archived");
   const transferidoProjects = !isTecnico && sector ? filtered.filter((p) => (p as any).transferred && p.status !== "archived") : [];
   const variavelProjects = isTecnico ? getVariavelProjects().filter((p: any) => p.status !== "archived") : [];
+  const cipaCards = isTecnico ? kanbanVariavelCards.filter(c => (c as any).status_tecnico === "CIPA" && c.status !== "archived") : [];
+  const cipaProjects: Project[] = cipaCards.map(c => ({
+    id: c.id, company_id: "1", project_name: c.title, description: c.description,
+    due_date: "2026-12-31", status: c.status, sector: "tecnico" as Sector, responsible_ids: [], created_at: c.createdAt,
+  }));
 
   // Auto-archive: tecnico projects in "done"/"Finalizada" for 3+ days
   useEffect(() => {
     if (!isTecnico) return;
     const now = Date.now();
     const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
+    const YEAR = 360 * 24 * 60 * 60 * 1000;
 
-    // Check tecnico projects with status "done" and archived_at timestamp
     tecnicoProjects.forEach((tp) => {
       if (tp.status_tecnico === "Finalizada" && !((tp as any).archived_at)) {
-        // Set archived_at timestamp if not set
         updateTecnicoProject(tp.id, { archived_at: new Date().toISOString() } as any);
       } else if (tp.status_tecnico === "Finalizada" && (tp as any).archived_at) {
         const archivedTime = new Date((tp as any).archived_at).getTime();
@@ -521,8 +534,45 @@ const Dashboard = () => {
           updateTecnicoProject(tp.id, { status_tecnico: "Arquivado" } as any);
         }
       }
+      // 360 days: move archived back to "Não cadastradas no ESO"
+      if (tp.status_tecnico === "Arquivado" && (tp as any).archived_at) {
+        const archivedTime = new Date((tp as any).archived_at).getTime();
+        if (now - archivedTime >= YEAR) {
+          updateTecnicoProject(tp.id, { status_tecnico: "Não cadastradas no ESO", archived_at: null } as any);
+        }
+      }
     });
   }, [isTecnico, tecnicoProjects.length]);
+
+  // Auto-archive: all sectors projects in "done" for 3+ days
+  useEffect(() => {
+    if (!sector || isTecnico) return;
+    const now = Date.now();
+    const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
+    projects.filter(p => p.sector === sector && p.status === "done").forEach(p => {
+      if (!(p as any).done_at) {
+        updateProject(p.id, { done_at: new Date().toISOString() } as any);
+      } else {
+        const doneTime = new Date((p as any).done_at).getTime();
+        if (now - doneTime >= THREE_DAYS) {
+          updateProject(p.id, { status: "archived" } as any);
+        }
+      }
+    });
+  }, [sector, projects.length]);
+
+  // Notification: check if there are transferred projects
+  useEffect(() => {
+    if (!sector || isTecnico || isGeneralDashboard) return;
+    const transferred = projects.filter(p => p.sector === sector && (p as any).transferred && p.status !== "archived");
+    const dismissedKey = `transfer_notif_dismissed_${sector}`;
+    const dismissed = localStorage.getItem(dismissedKey);
+    if (transferred.length > 0 && !dismissed) {
+      const latest = transferred[transferred.length - 1];
+      const fromSector = (latest as any).from_sector || "outro setor";
+      setTransferNotification(`O setor "${fromSector}" enviou um projeto pra você. Está em Demanda Variáveis, fique atento!`);
+    }
+  }, [sector, projects.length]);
 
   const getColumnsForSector = () => {
     if (isTecnico) return tecnicoColumns;
@@ -564,7 +614,11 @@ const Dashboard = () => {
         registerPremiacao(p.project_name, sector || "geral", undefined, p.responsible_ids);
       }
     }
-    updateProjectStatus(projectId, newStatus);
+    if (newStatus === "done") {
+      updateProject(projectId, { status: newStatus, done_at: new Date().toISOString() } as any);
+    } else {
+      updateProjectStatus(projectId, newStatus);
+    }
   };
 
   const handleTecnicoDrop = (projectId: string, newStatus: Project["status"]) => {
@@ -753,6 +807,17 @@ const Dashboard = () => {
     <div className="min-h-screen flex">
       <AppSidebar />
       <AchievementToast show={showAchievement} projectName={achievementName} onClose={() => setShowAchievement(false)} />
+
+      {/* Transfer notification banner */}
+      {transferNotification && (
+        <div className="fixed top-4 right-4 z-50 max-w-sm bg-orange-500 text-white rounded-xl shadow-lg p-4 animate-fade-in flex items-start gap-3">
+          <ArrowRightLeft className="w-5 h-5 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-medium">{transferNotification}</p>
+          </div>
+          <button onClick={() => { setTransferNotification(null); localStorage.setItem(`transfer_notif_dismissed_${sector}`, "1"); }} className="text-white/80 hover:text-white text-lg leading-none">×</button>
+        </div>
+      )}
 
       {/* Archive confirmation dialog */}
       <Dialog open={!!archiveConfirm} onOpenChange={(v) => !v && setArchiveConfirm(null)}>
@@ -947,6 +1012,41 @@ const Dashboard = () => {
                           users={users}
                           onDrop={handleDrop}
                           locked={isGeneralDashboard}
+                          maxCards={10}
+                          onViewAll={handleViewAll}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Quadro CIPA - Técnico only */}
+            {isTecnico && !isGeneralDashboard && cipaProjects.length > 0 && (
+              <div className="mb-10 animate-fade-in">
+                <div className="flex items-center gap-2.5 mb-4">
+                  <div className="w-7 h-7 rounded-[10px] bg-emerald-400/10 flex items-center justify-center">
+                    <Layers className="w-3.5 h-3.5 text-emerald-400 stroke-[1.5]" />
+                  </div>
+                  <h2 className="text-[15px] font-semibold text-foreground">CIPA</h2>
+                  <span className="text-[10px] text-muted-foreground">(comissão interna)</span>
+                  <span className="ml-1 w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center">{cipaProjects.length}</span>
+                </div>
+                <div className={`bg-card rounded-[12px] border p-5 neon-card shadow-[0_0_15px_rgba(52,211,153,0.15)] border-emerald-400/20`}>
+                  <div className="flex gap-5 overflow-x-auto pb-2 snap-x snap-mandatory md:snap-none">
+                    {cipaColumns.map((col) => {
+                      const colProjects = cipaProjects.filter((p) => p.status === col.status);
+                      return (
+                        <PaginatedKanbanColumn
+                          key={`cipa-${col.status}`}
+                          col={col}
+                          projects={colProjects}
+                          users={users}
+                          onDrop={handleVariavelDrop}
+                          locked={false}
+                          onCardClick={handleVariavelCardClick}
+                          extraClass={`border-t-2 border-t-emerald-400 shadow-[0_-2px_10px_rgba(52,211,153,0.3)]`}
                           maxCards={10}
                           onViewAll={handleViewAll}
                         />

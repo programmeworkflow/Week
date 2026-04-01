@@ -275,7 +275,9 @@ const ProjectDetail = () => {
         usuario_id: user?.id || "1",
         conteudo: `Projeto transferido para ${SECTORS.find(s => s.id === newSector)?.label}. Motivo: ${description}`,
       });
-      updateProject(projectId, { sector: newSector, responsible_ids: newResponsaveis.length ? newResponsaveis : regularProject!.responsible_ids, transferred: true } as any);
+      const fromLabel = SECTORS.find(s => s.id === regularProject?.sector)?.label || "outro setor";
+      localStorage.removeItem(`transfer_notif_dismissed_${newSector}`);
+      updateProject(projectId, { sector: newSector, responsible_ids: newResponsaveis.length ? newResponsaveis : regularProject!.responsible_ids, transferred: true, from_sector: fromLabel, status: "not_started" } as any);
     }
   };
 

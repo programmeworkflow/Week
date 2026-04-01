@@ -312,7 +312,11 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       responsible_ids: [],
       created_at: new Date().toISOString(),
       transferred: true,
+      from_sector: "Setor Técnico",
     };
+
+    // Reset notification dismissal for target sector
+    localStorage.removeItem(`transfer_notif_dismissed_${newSector}`);
 
     setProjects(prev => [...prev, newProject]);
     await supabase.from("medwork_projects").insert(newProject);
