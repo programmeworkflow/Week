@@ -572,19 +572,21 @@ const Dashboard = () => {
 
   const columns = getColumnsForSector();
 
-  const registerPremiacao = async (projectName: string, sectorName: string, responsavelName?: string, responsavelIds?: string[]) => {
-    // Points go to the responsible person, not the person who moved it
-    const respUser = responsavelIds?.length
-      ? users.find(u => responsavelIds.includes(u.id))
-      : responsavelName
-        ? users.find(u => u.full_name === responsavelName)
-        : null;
-    const name = respUser?.full_name || responsavelName || "Desconhecido";
-    const userId = respUser?.id || "0";
+  const registerPremiacao = async (projectName: string, sectorName: string) => {
+    // Points go to whoever clicked/dragged the project to "done".
+    // Award only once per (project_name, sector) — idempotent.
+    if (!user) return;
+    const { data: existing } = await supabase
+      .from("medwork_premiacao")
+      .select("id")
+      .eq("project_name", projectName)
+      .eq("sector", sectorName)
+      .maybeSingle();
+    if (existing) return;
     await supabase.from("medwork_premiacao").insert({
       id: String(Date.now()),
-      user_name: name,
-      user_id: userId,
+      user_name: user.full_name,
+      user_id: user.id,
       project_name: projectName,
       sector: sectorName,
       points: 100,
@@ -598,8 +600,8 @@ const Dashboard = () => {
       if (p && p.status !== "done") {
         setAchievementName(p.project_name);
         setShowAchievement(true);
-        // Points go to the responsible person of the project
-        registerPremiacao(p.project_name, sector || "geral", undefined, p.responsible_ids);
+        // Points go to whoever moved it to "done"
+        registerPremiacao(p.project_name, sector || "geral");
       }
     }
     if (newStatus === "done") {
@@ -623,7 +625,7 @@ const Dashboard = () => {
       if (tp && tp.status_tecnico !== "Finalizada") {
         setAchievementName(tp.empresa);
         setShowAchievement(true);
-        registerPremiacao(tp.empresa, "tecnico", tp.responsavel);
+        registerPremiacao(tp.empresa, "tecnico");
       }
     }
     const tecnicoStatus = reverseStatusMap[newStatus];
@@ -639,7 +641,7 @@ const Dashboard = () => {
         const name = card.title || card.empresa || "Projeto";
         setAchievementName(name);
         setShowAchievement(true);
-        registerPremiacao(name, "tecnico", (card as any).responsavel);
+        registerPremiacao(name, "tecnico");
       }
     }
     updateKanbanVariavelStatus(cardId, newStatus);
