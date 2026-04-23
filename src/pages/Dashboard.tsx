@@ -582,13 +582,25 @@ const Dashboard = () => {
 
   const columns = getColumnsForSector();
 
-  const registerPremiacao = async (projectName: string, sectorName: string) => {
-    // Points go to whoever clicked/dragged the project to "done".
-    // Award only once per (project_name, sector) — idempotent.
-    if (!user) return;
+  const registerPremiacao = async (
+    projectName: string,
+    sectorName: string,
+    responsavelName?: string,
+    responsavelIds?: string[],
+  ): Promise<boolean> => {
+    // Points go to the project's RESPONSIBLE person (not whoever moved it).
+    // No responsible set -> "Desconhecido". Award only once per (project_name, sector).
+    const respUser = responsavelIds?.length
+      ? users.find((u) => responsavelIds.includes(u.id))
+      : responsavelName
+        ? users.find((u) => u.full_name === responsavelName)
+        : null;
+    const recipientName = respUser?.full_name || responsavelName || "Desconhecido";
+    const recipientId = respUser?.id || "0";
+
     const k = awardKey(projectName, sectorName);
     // Trava sincrona: se já marcamos nesta sessão ou se já veio do banco, aborta
-    if (awardedRef.current.has(k)) return;
+    if (awardedRef.current.has(k)) return false;
     awardedRef.current.add(k); // marca ANTES do await pra fechar a janela de race
     try {
       // Segunda checagem no banco (caso outro usuário tenha pontuado)
@@ -598,31 +610,39 @@ const Dashboard = () => {
         .eq("project_name", projectName)
         .eq("sector", sectorName)
         .maybeSingle();
-      if (existing) return;
-      await supabase.from("medwork_premiacao").insert({
+      if (existing) return false;
+      const { error } = await supabase.from("medwork_premiacao").insert({
         id: String(Date.now()),
-        user_name: user.full_name,
-        user_id: user.id,
+        user_name: recipientName,
+        user_id: recipientId,
         project_name: projectName,
         sector: sectorName,
         points: 100,
         completed_at: new Date().toISOString(),
       });
+      // Se o banco rejeitou por UNIQUE constraint (23505), trata como já pontuado
+      if (error) {
+        if ((error as any).code !== "23505") console.error("registerPremiacao error:", error);
+        return false;
+      }
+      return true;
     } catch (err) {
-      // Em caso de erro, permite nova tentativa
-      awardedRef.current.delete(k);
+      awardedRef.current.delete(k); // permite retry
       console.error("registerPremiacao error:", err);
+      return false;
     }
   };
 
-  const handleDrop = (projectId: string, newStatus: Project["status"]) => {
+  const handleDrop = async (projectId: string, newStatus: Project["status"]) => {
     if (newStatus === "done") {
       const p = sectorProjects.find(pr => pr.id === projectId);
       if (p && p.status !== "done") {
-        setAchievementName(p.project_name);
-        setShowAchievement(true);
-        // Points go to whoever moved it to "done"
-        registerPremiacao(p.project_name, sector || "geral");
+        // Tenta pontuar primeiro; só mostra toast se for premiação nova
+        const awarded = await registerPremiacao(p.project_name, sector || "geral", undefined, p.responsible_ids);
+        if (awarded) {
+          setAchievementName(p.project_name);
+          setShowAchievement(true);
+        }
       }
     }
     if (newStatus === "done") {
@@ -644,9 +664,12 @@ const Dashboard = () => {
     if (newStatus === "done") {
       const tp = tecnicoProjects.find(t => t.id === projectId);
       if (tp && tp.status_tecnico !== "Finalizada") {
-        setAchievementName(tp.empresa);
-        setShowAchievement(true);
-        registerPremiacao(tp.empresa, "tecnico");
+        registerPremiacao(tp.empresa, "tecnico", tp.responsavel).then((awarded) => {
+          if (awarded) {
+            setAchievementName(tp.empresa);
+            setShowAchievement(true);
+          }
+        });
       }
     }
     const tecnicoStatus = reverseStatusMap[newStatus];
@@ -660,9 +683,12 @@ const Dashboard = () => {
       const card = kanbanVariavelCards.find((c) => c.id === cardId);
       if (card && card.status !== "done") {
         const name = card.title || card.empresa || "Projeto";
-        setAchievementName(name);
-        setShowAchievement(true);
-        registerPremiacao(name, "tecnico");
+        registerPremiacao(name, "tecnico", (card as any).responsavel).then((awarded) => {
+          if (awarded) {
+            setAchievementName(name);
+            setShowAchievement(true);
+          }
+        });
       }
     }
     updateKanbanVariavelStatus(cardId, newStatus);
