@@ -15,7 +15,8 @@ import { cn } from "@/lib/utils";
 import { getSectorTitle } from "@/lib/sectors";
 import { formatTelefone, formatDate as fmtDate3, formatCNPJ as fmtCNPJ3 } from "@/lib/formatters";
 import { ImportSpreadsheetModal } from "@/components/ImportSpreadsheetModal";
-import { Plus, Trash2, Save, Edit2, Eye, Filter, X } from "lucide-react";
+import { Plus, Trash2, Save, Edit2, Eye, Filter, X, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 
 const statusLabels: Record<Project["status"], string> = {
   not_authenticated: "Não Autenticado",
@@ -105,28 +106,31 @@ const TecnicoSpreadsheet = () => {
     setFilterDataDe(""); setFilterDataAte("");
   };
 
-  // Apply filters
+  // Apply filters — all string comparisons are null-safe
   let filteredProjects = tecnicoProjects;
-  if (filterEmpresa) filteredProjects = filteredProjects.filter(p => p.empresa.toLowerCase().includes(filterEmpresa.toLowerCase()));
-  if (filterCnpj) filteredProjects = filteredProjects.filter(p => p.cnpj.includes(filterCnpj));
+  if (filterEmpresa) filteredProjects = filteredProjects.filter(p => (p.empresa || "").toLowerCase().includes(filterEmpresa.toLowerCase()));
+  if (filterCnpj) filteredProjects = filteredProjects.filter(p => (p.cnpj || "").includes(filterCnpj));
   if (filterResponsavel !== "all") filteredProjects = filteredProjects.filter(p => p.responsavel === filterResponsavel);
-  if (filterRegiao) filteredProjects = filteredProjects.filter(p => p.regiao.toLowerCase().includes(filterRegiao.toLowerCase()));
+  if (filterRegiao) filteredProjects = filteredProjects.filter(p => (p.regiao || "").toLowerCase().includes(filterRegiao.toLowerCase()));
   if (filterPrioridade !== "all") filteredProjects = filteredProjects.filter(p => p.prioridade === filterPrioridade);
   if (filterStatus !== "all") filteredProjects = filteredProjects.filter(p => p.status_tecnico === filterStatus);
-  if (filterDataDe) {
+  // Date filters only apply when the user has typed a COMPLETE, valid date (dd/mm/yyyy)
+  if (filterDataDe && isValidDate(filterDataDe)) {
+    const [ddd, mmd, yyyyd] = filterDataDe.split("/").map(Number);
+    const since = new Date(yyyyd, mmd - 1, ddd);
     filteredProjects = filteredProjects.filter(p => {
       if (!p.data || !isValidDate(p.data)) return false;
       const [dd, mm, yyyy] = p.data.split("/").map(Number);
-      const [ddd, mmd, yyyyd] = filterDataDe.split("/").map(Number);
-      return new Date(yyyy, mm - 1, dd) >= new Date(yyyyd, mmd - 1, ddd);
+      return new Date(yyyy, mm - 1, dd) >= since;
     });
   }
-  if (filterDataAte) {
+  if (filterDataAte && isValidDate(filterDataAte)) {
+    const [dda, mma, yyyya] = filterDataAte.split("/").map(Number);
+    const until = new Date(yyyya, mma - 1, dda);
     filteredProjects = filteredProjects.filter(p => {
       if (!p.data || !isValidDate(p.data)) return false;
       const [dd, mm, yyyy] = p.data.split("/").map(Number);
-      const [dda, mma, yyyya] = filterDataAte.split("/").map(Number);
-      return new Date(yyyy, mm - 1, dd) <= new Date(yyyya, mma - 1, dda);
+      return new Date(yyyy, mm - 1, dd) <= until;
     });
   }
 
@@ -153,10 +157,41 @@ const TecnicoSpreadsheet = () => {
     setEditingProject(null);
   };
 
+  const handleExportExcel = () => {
+    const rows = filteredProjects.map((p) => ({
+      "Empresa": p.empresa || "",
+      "CNPJ": p.cnpj || "",
+      "Responsável": p.responsavel || "",
+      "Região": p.regiao || "",
+      "Prioridade": p.prioridade || "",
+      "Data": p.data || "",
+      "Status": p.status_tecnico || "",
+      "Contato - Nome": p.contato_nome || "",
+      "Contato - Telefone": p.contato_telefone || "",
+      "Contato - Email": p.contato_email || "",
+      "Dados extras": p.dados_extras || "",
+      "Arquivado por": (p as any).archived_by || "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [
+      { wch: 28 }, { wch: 20 }, { wch: 14 }, { wch: 16 }, { wch: 12 },
+      { wch: 12 }, { wch: 22 }, { wch: 22 }, { wch: 18 }, { wch: 26 },
+      { wch: 30 }, { wch: 18 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Projetos Técnico");
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, "0");
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const yyyy = today.getFullYear();
+    const suffix = hasActiveFilters ? "_filtrado" : "";
+    XLSX.writeFile(wb, `projetos_tecnico_${dd}-${mm}-${yyyy}${suffix}.xlsx`);
+  };
+
   return (
     <>
       {/* Filter Bar */}
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4 flex items-center gap-2 flex-wrap">
         <Button
           variant={showFilters ? "default" : "outline"}
           onClick={() => setShowFilters(!showFilters)}
@@ -171,6 +206,27 @@ const TecnicoSpreadsheet = () => {
             <X className="w-3 h-3" /> Limpar filtros
           </Button>
         )}
+
+        {/* Row counter (Excel-style) */}
+        <span className="text-xs text-muted-foreground ml-1 px-2 py-1 rounded-md bg-muted/40 border border-border whitespace-nowrap">
+          {hasActiveFilters
+            ? <>Linhas: <span className="font-semibold text-foreground">{filteredProjects.length}</span> <span className="opacity-60">de {tecnicoProjects.length}</span></>
+            : <>Linhas: <span className="font-semibold text-foreground">{tecnicoProjects.length}</span></>
+          }
+        </span>
+
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleExportExcel}
+            disabled={filteredProjects.length === 0}
+            className="gap-2 rounded-lg text-sm"
+            title={hasActiveFilters ? "Exportar resultado filtrado em Excel" : "Exportar todos os projetos em Excel"}
+          >
+            <Download className="w-4 h-4" />
+            Exportar Excel{hasActiveFilters ? " (filtrado)" : ""}
+          </Button>
+        </div>
       </div>
 
       {showFilters && (
@@ -191,7 +247,7 @@ const TecnicoSpreadsheet = () => {
                 <SelectTrigger className="h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  {[...users.map(u => u.full_name), "Zona de espera"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                  {[...users.filter(u => u.sectors?.includes("tecnico" as any)).map(u => u.full_name), "Zona de espera"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

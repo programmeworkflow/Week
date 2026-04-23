@@ -91,20 +91,20 @@ const Procuracao = () => {
   const clearFilters = () => { setFEmpresa(""); setFCnpj(""); setFSituacao("all"); setFContrato(""); setFEmail(""); setFTelefone(""); setFProcuracao(""); setFContabilidade(""); setPage(1); };
 
   const filteredRows = rows.filter(r => {
-    if (fEmpresa && !r.empresa.toLowerCase().includes(fEmpresa.toLowerCase())) return false;
-    if (fCnpj && !r.cnpj_cpf.toLowerCase().includes(fCnpj.toLowerCase())) return false;
-    if (fSituacao !== "all" && r.situacao !== (fSituacao === "vazio" ? "" : fSituacao)) return false;
-    if (fContrato && !r.contrato.toLowerCase().includes(fContrato.toLowerCase())) return false;
-    if (fEmail && !r.email.toLowerCase().includes(fEmail.toLowerCase())) return false;
-    if (fTelefone && !r.telefone.toLowerCase().includes(fTelefone.toLowerCase())) return false;
-    if (fProcuracao && !r.procuracao_vencimento.includes(fProcuracao)) return false;
-    if (fContabilidade && !r.contabilidade.toLowerCase().includes(fContabilidade.toLowerCase())) return false;
+    if (fEmpresa && !(r.empresa || "").toLowerCase().includes(fEmpresa.toLowerCase())) return false;
+    if (fCnpj && !(r.cnpj_cpf || "").toLowerCase().includes(fCnpj.toLowerCase())) return false;
+    if (fSituacao !== "all" && (r.situacao || "") !== (fSituacao === "vazio" ? "" : fSituacao)) return false;
+    if (fContrato && !(r.contrato || "").toLowerCase().includes(fContrato.toLowerCase())) return false;
+    if (fEmail && !(r.email || "").toLowerCase().includes(fEmail.toLowerCase())) return false;
+    if (fTelefone && !(r.telefone || "").toLowerCase().includes(fTelefone.toLowerCase())) return false;
+    if (fProcuracao && !(r.procuracao_vencimento || "").includes(fProcuracao)) return false;
+    if (fContabilidade && !(r.contabilidade || "").toLowerCase().includes(fContabilidade.toLowerCase())) return false;
     return true;
   }).sort((a, b) => {
-    if (sortOrder === "az") return a.empresa.localeCompare(b.empresa, "pt-BR");
-    if (sortOrder === "za") return b.empresa.localeCompare(a.empresa, "pt-BR");
+    if (sortOrder === "az") return (a.empresa || "").localeCompare(b.empresa || "", "pt-BR");
+    if (sortOrder === "za") return (b.empresa || "").localeCompare(a.empresa || "", "pt-BR");
     if (sortDate) {
-      const toNum = (d: string) => { const p = d.split("/"); return p.length === 3 ? `${p[2]}${p[1]}${p[0]}` : ""; };
+      const toNum = (d: string) => { const p = (d || "").split("/"); return p.length === 3 ? `${p[2]}${p[1]}${p[0]}` : ""; };
       const da = toNum(a.procuracao_vencimento), db = toNum(b.procuracao_vencimento);
       if (sortDate === "az") return da.localeCompare(db);
       if (sortDate === "za") return db.localeCompare(da);
@@ -130,21 +130,24 @@ const Procuracao = () => {
   }, []);
 
   const exportExcel = () => {
-    const data = rows.map(r => ({
-      "Empresa": r.empresa,
-      "CNPJ/CPF": r.cnpj_cpf,
+    // Respects filter+sort currently applied to the table
+    const source = filteredRows;
+    const data = source.map(r => ({
+      "Empresa": r.empresa || "",
+      "CNPJ/CPF": r.cnpj_cpf || "",
       "Situação": r.situacao || "Em branco",
-      "Contrato": r.contrato,
-      "E-mail": r.email,
-      "Telefone": r.telefone,
-      "Procuração (Vencimento)": r.procuracao_vencimento,
-      "Contabilidade": r.contabilidade,
+      "Contrato": r.contrato || "",
+      "E-mail": r.email || "",
+      "Telefone": r.telefone || "",
+      "Procuração (Vencimento)": r.procuracao_vencimento || "",
+      "Contabilidade": r.contabilidade || "",
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     ws["!cols"] = [{ wch: 25 }, { wch: 20 }, { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 18 }, { wch: 15 }, { wch: 20 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Procurações");
-    XLSX.writeFile(wb, "procuracoes_esocial.xlsx");
+    const suffix = hasFilters ? "_filtrado" : "";
+    XLSX.writeFile(wb, `procuracoes_esocial${suffix}.xlsx`);
   };
 
   const importExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
