@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { useProjects } from "@/contexts/ProjectContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Layers, PinOff, RefreshCw, Crown } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Layers, PinOff, RefreshCw, Crown, Calendar, Car, Monitor } from "lucide-react";
 import { SECTORS, Sector } from "@/lib/mock-data";
 import { formatCNPJ, formatTelefone } from "@/lib/formatters";
 
@@ -17,6 +20,7 @@ interface NewProjectModalProps {
 
 export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
   const { addProject, addTecnicoProject, addKanbanVariavelCard, addRenovacaoCard, users } = useProjects();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [quadroTipo, setQuadroTipo] = useState<"fixo" | "variavel" | "renovacao">("fixo");
   const [form, setForm] = useState({
@@ -34,14 +38,54 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
     prioridade: "Média" as "Baixa" | "Média" | "Alta" | "Crítica",
   });
 
+  // Opcional: lançar também no calendário (com carro, data show, horário)
+  const [agendar, setAgendar] = useState(false);
+  const [agenda, setAgenda] = useState({
+    horaInicio: "",
+    horaFim: "",
+    tipo: "compromisso" as "treinamento" | "visita" | "reuniao" | "compromisso",
+    usarCarro: false,
+    tipoCarro: "" as "" | "mobi" | "alugado",
+    usarDataShow: false,
+    localizacao: "",
+    observacoes: "",
+  });
+
   const isTecnico = form.sector === "tecnico";
   const isComercial = form.sector === "comercial";
   const isDiretoria = form.sector === "diretoria";
   const [comercialQuadro, setComercialQuadro] = useState<"treinamento" | "comercial">("treinamento");
   const [diretoriaQuadro, setDiretoriaQuadro] = useState<"samuel" | "fernando">("samuel");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Se marcou "lançar no calendário", insere compromisso ligado a este projeto
+    if (agendar && form.due_date && agenda.horaInicio) {
+      try {
+        const responsavelName = users.find((u) => form.responsible_ids[0] === u.id)?.full_name || "";
+        await supabase.from("medwork_compromissos").insert({
+          id: crypto.randomUUID(),
+          sector: form.sector,
+          data: form.due_date,
+          hora_inicio: agenda.horaInicio,
+          hora_fim: agenda.horaFim || "",
+          tipo: agenda.tipo,
+          usar_carro: agenda.usarCarro,
+          tipo_carro: agenda.usarCarro ? agenda.tipoCarro : "",
+          usar_data_show: agenda.usarDataShow,
+          criado_por: user?.full_name || "",
+          instrutor: "",
+          origem: "demanda_variavel",
+          empresa: form.project_name,
+          localizacao: agenda.localizacao,
+          observacoes: agenda.observacoes || form.description,
+          responsavel: responsavelName,
+        });
+      } catch (err) {
+        console.error("Erro ao criar compromisso:", err);
+      }
+    }
 
     if (isTecnico && quadroTipo === "variavel") {
       addKanbanVariavelCard({
@@ -107,6 +151,8 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
       prioridade: "Média",
     });
     setQuadroTipo("fixo");
+    setAgendar(false);
+    setAgenda({ horaInicio: "", horaFim: "", tipo: "compromisso", usarCarro: false, tipoCarro: "", usarDataShow: false, localizacao: "", observacoes: "" });
     setOpen(false);
   };
 
@@ -378,6 +424,76 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
               placeholder="Informações adicionais..."
               rows={2}
             />
+          </div>
+
+          {/* Opção: Lançar também no Calendário */}
+          <hr className="border-border" />
+          <div className="bg-muted/20 rounded-xl border border-border p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2 cursor-pointer">
+                <Calendar className="w-4 h-4 text-primary" />
+                Lançar também no Calendário?
+              </Label>
+              <Switch checked={agendar} onCheckedChange={setAgendar} />
+            </div>
+            {agendar && (
+              <div className="space-y-3 animate-fade-in">
+                <p className="text-[11px] text-muted-foreground">
+                  Cria um compromisso na aba Calendário usando a Data Limite acima. Útil quando a demanda exige deslocamento.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Hora início</Label>
+                    <Input type="time" value={agenda.horaInicio} onChange={(e) => setAgenda({ ...agenda, horaInicio: e.target.value })} className="h-9 text-sm" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Hora fim</Label>
+                    <Input type="time" value={agenda.horaFim} onChange={(e) => setAgenda({ ...agenda, horaFim: e.target.value })} className="h-9 text-sm" />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Tipo</Label>
+                  <Select value={agenda.tipo} onValueChange={(v) => setAgenda({ ...agenda, tipo: v as any })}>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="compromisso">Compromisso</SelectItem>
+                      <SelectItem value="visita">Visita Técnica</SelectItem>
+                      <SelectItem value="reuniao">Reunião</SelectItem>
+                      <SelectItem value="treinamento">Treinamento</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Localização (opcional)</Label>
+                  <Input value={agenda.localizacao} onChange={(e) => setAgenda({ ...agenda, localizacao: e.target.value })} placeholder="Endereço ou URL do Maps" className="h-9 text-sm" />
+                </div>
+                <div className="flex items-center justify-between py-1">
+                  <Label className="text-xs flex items-center gap-1.5"><Car className="w-3.5 h-3.5 text-cyan-400" /> Vai usar carro?</Label>
+                  <Switch checked={agenda.usarCarro} onCheckedChange={(v) => setAgenda({ ...agenda, usarCarro: v, tipoCarro: v ? agenda.tipoCarro : "" })} />
+                </div>
+                {agenda.usarCarro && (
+                  <div className="space-y-1 pl-5">
+                    <Label className="text-xs">Qual carro?</Label>
+                    <Select value={agenda.tipoCarro || ""} onValueChange={(v) => setAgenda({ ...agenda, tipoCarro: v as "mobi" | "alugado" })}>
+                      <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Escolha..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="mobi">Mobi</SelectItem>
+                        <SelectItem value="alugado">Alugado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="flex items-center justify-between py-1">
+                  <Label className="text-xs flex items-center gap-1.5"><Monitor className="w-3.5 h-3.5 text-violet-400" /> Usar Data Show?</Label>
+                  <Switch checked={agenda.usarDataShow} onCheckedChange={(v) => setAgenda({ ...agenda, usarDataShow: v })} />
+                </div>
+                {(!form.due_date || !agenda.horaInicio) && (
+                  <p className="text-[10px] text-amber-500">
+                    ⚠ Preencha a Data Limite e a Hora início pra criar o compromisso.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-[10px] font-medium h-10 transition-all duration-200 btn-3d neon-hover">
