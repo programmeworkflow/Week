@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { getSectorTitle } from "@/lib/sectors";
 import { formatTelefone, formatDate as fmtDate3, formatCNPJ as fmtCNPJ3 } from "@/lib/formatters";
 import { ImportSpreadsheetModal } from "@/components/ImportSpreadsheetModal";
-import { Plus, Trash2, Save, Edit2, Eye, Filter, X, Download } from "lucide-react";
+import { Plus, Trash2, Save, Edit2, Eye, Filter, X, Download, RefreshCw, MessageCircle } from "lucide-react";
 import * as XLSX from "xlsx";
 
 const statusLabels: Record<Project["status"], string> = {
@@ -456,7 +456,23 @@ const TecnicoSpreadsheet = () => {
               <hr className="border-border" />
               <div><span className="text-muted-foreground text-xs">Contato:</span><p className="font-medium">{viewingProject.contato_nome || "—"}</p></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground text-xs">Telefone:</span><p className="font-medium">{viewingProject.contato_telefone || "—"}</p></div>
+                <div>
+                  <span className="text-muted-foreground text-xs">Telefone:</span>
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-medium">{viewingProject.contato_telefone || "—"}</p>
+                    {viewingProject.contato_telefone && (
+                      <a
+                        href={`https://wa.me/55${(viewingProject.contato_telefone || "").replace(/\D/g, "")}?text=${encodeURIComponent(`Olá${viewingProject.contato_nome ? ` ${viewingProject.contato_nome}` : ""}! Entrando em contato sobre o projeto "${viewingProject.empresa}" - Week MedWork`)}`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="p-1 rounded hover:bg-green-500/10 text-green-600"
+                        title="Abrir no WhatsApp"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
                 <div><span className="text-muted-foreground text-xs">Email:</span><p className="font-medium">{viewingProject.contato_email || "—"}</p></div>
               </div>
               {viewingProject.dados_extras && (
@@ -555,7 +571,10 @@ const DefaultProjectList = ({ sector, comercialStatusLabels, comercialStatusColo
   const { projects, users, updateProjectStatus } = useProjects();
   const navigate = useNavigate();
 
-  const sectorProjects = sector ? projects.filter((p) => p.sector === sector) : projects;
+  const isFinanceiro = sector === "financeiro";
+  const sectorProjects = sector
+    ? projects.filter((p) => p.sector === sector && (isFinanceiro ? p.status === "archived" : p.status !== "archived"))
+    : projects;
 
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden animate-fade-in shadow-card">
@@ -567,6 +586,7 @@ const DefaultProjectList = ({ sector, comercialStatusLabels, comercialStatusColo
             <th className="text-left text-[11px] font-bold text-foreground px-4 py-3 uppercase tracking-wider">Responsáveis</th>
             <th className="text-left text-[11px] font-bold text-foreground px-4 py-3 uppercase tracking-wider">Criação</th>
             <th className="text-left text-[11px] font-bold text-foreground px-4 py-3 uppercase tracking-wider">Data Limite</th>
+            {isFinanceiro && <th className="text-center text-[11px] font-bold text-foreground px-4 py-3 uppercase tracking-wider w-32">Ações</th>}
           </tr>
         </thead>
         <tbody>
@@ -609,10 +629,23 @@ const DefaultProjectList = ({ sector, comercialStatusLabels, comercialStatusColo
               </td>
               <td className="px-4 py-3 text-xs text-muted-foreground">{format(new Date(p.created_at), "dd/MM/yyyy")}</td>
               <td className="px-4 py-3 text-xs text-muted-foreground">{format(new Date(p.due_date), "dd/MM/yyyy")}</td>
+              {isFinanceiro && (
+                <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                  {p.status === "archived" && (
+                    <button
+                      onClick={() => updateProjectStatus(p.id, "not_started")}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors"
+                      title="Desarquivar"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" /> Desarquivar
+                    </button>
+                  )}
+                </td>
+              )}
             </tr>
           ))}
           {sectorProjects.length === 0 && (
-            <tr><td colSpan={5} className="text-center py-8 text-sm text-muted-foreground">Nenhum projeto encontrado.</td></tr>
+            <tr><td colSpan={isFinanceiro ? 6 : 5} className="text-center py-8 text-sm text-muted-foreground">Nenhum projeto arquivado.</td></tr>
           )}
         </tbody>
       </table>
@@ -639,9 +672,12 @@ const ProjectList = () => {
   const { canAccessSector } = useAuth();
   const isTecnico = sector === "tecnico";
   const isComercial = sector === "comercial";
+  const isFinanceiro = sector === "financeiro";
   const title = isComercial
     ? `Treinamentos - ${getSectorTitle(sector)}`
-    : sector ? `Projetos - ${getSectorTitle(sector)}` : "Todos os Projetos";
+    : isFinanceiro
+      ? "Arquivadas - Financeiro"
+      : sector ? `Projetos - ${getSectorTitle(sector)}` : "Todos os Projetos";
 
   if (sector && !canAccessSector(sector as Sector)) {
     return <Navigate to="/dashboard/projects" replace />;

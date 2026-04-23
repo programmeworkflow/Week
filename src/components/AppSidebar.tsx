@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { SECTORS, Sector } from "@/lib/mock-data";
 import medworkLogo from "@/assets/medwork-logo.png";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { NotificationsBell } from "./NotificationsBell";
 
 const sectorIcons: Record<Sector, React.ElementType> = {
   tecnico: Stethoscope,
@@ -132,7 +133,7 @@ export const AppSidebar = () => {
             </div>
             {!collapsed && (
               <div>
-                <span className="font-semibold text-foreground text-[13px]">Back to Work - MedWork</span>
+                <span className="font-semibold text-foreground text-[13px]">Week MedWork</span>
                 <span className="block text-[10px] text-muted-foreground leading-none">Medicina e Segurança</span>
               </div>
             )}
@@ -167,6 +168,7 @@ export const AppSidebar = () => {
               {collapsed && <TooltipContent side="right"><p className="text-xs">{label}</p></TooltipContent>}
             </Tooltip>
           ))}
+          <NotificationsBell collapsed={collapsed} />
         </nav>
 
         {/* Divider */}
@@ -293,7 +295,7 @@ export const AppSidebar = () => {
                       )}
                     >
                       <List className="w-3.5 h-3.5 stroke-[1.5]" />
-                      {id === "comercial" ? "Treinamentos" : "Projetos"}
+                      {id === "comercial" ? "Treinamentos" : id === "financeiro" ? "Arquivadas" : "Projetos"}
                     </Link>
                     {(id === "tecnico" || id === "psicossocial") && (
                       <>

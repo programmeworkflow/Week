@@ -42,6 +42,10 @@ interface Compromisso {
   tipo: "treinamento" | "visita" | "reuniao" | "compromisso";
   criadoPor: string;
   instrutor?: string;
+  empresa?: string;
+  localizacao?: string;
+  observacoes?: string;
+  responsavel?: string;
 }
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -71,6 +75,10 @@ const CalendarioTecnico = () => {
           tipo: c.tipo || "treinamento",
           criadoPor: c.criado_por || "",
           instrutor: c.instrutor || "",
+          empresa: c.empresa || "",
+          localizacao: c.localizacao || "",
+          observacoes: c.observacoes || "",
+          responsavel: c.responsavel || "",
         })));
       }
     };
@@ -114,13 +122,17 @@ const CalendarioTecnico = () => {
     tipo: "" as "" | "treinamento" | "visita" | "reuniao" | "compromisso",
     paraEmail: "",
     paraNome: "",
+    empresa: "",
+    localizacao: "",
+    observacoes: "",
+    responsavel: "",
   });
 
   if (!user) return <Navigate to="/" replace />;
   if (!canAccessSector(currentSector) && !user.is_admin) return <Navigate to="/dashboard/projects" replace />;
 
   const resetForm = () => {
-    setFormData({ data: "", horaInicio: "", horaFim: "", usarCarro: false, tipoCarro: "", usarDataShow: false, tipo: "", paraEmail: "", paraNome: "" });
+    setFormData({ data: "", horaInicio: "", horaFim: "", usarCarro: false, tipoCarro: "", usarDataShow: false, tipo: "", paraEmail: "", paraNome: "", empresa: "", localizacao: "", observacoes: "", responsavel: "" });
     setEditingId(null);
   };
 
@@ -140,6 +152,10 @@ const CalendarioTecnico = () => {
       tipo: c.tipo,
       paraEmail: c.paraEmail || "",
       paraNome: c.paraNome || "",
+      empresa: c.empresa || "",
+      localizacao: c.localizacao || "",
+      observacoes: c.observacoes || "",
+      responsavel: c.responsavel || "",
     });
     setEditingId(c.id);
     setSelectedEvent(null);
@@ -160,6 +176,10 @@ const CalendarioTecnico = () => {
       usarDataShow: formData.usarDataShow,
       tipo: formData.tipo as any,
       criadoPor: user.full_name,
+      empresa: formData.empresa,
+      localizacao: formData.localizacao,
+      observacoes: formData.observacoes,
+      responsavel: formData.responsavel,
     };
 
     const dbRow = {
@@ -169,6 +189,10 @@ const CalendarioTecnico = () => {
       tipo_carro: formData.tipoCarro || "", usar_data_show: formData.usarDataShow,
       criado_por: user.full_name, instrutor: "", origem: "manual",
       para_email: formData.paraEmail, para_nome: formData.paraNome,
+      empresa: formData.empresa,
+      localizacao: formData.localizacao,
+      observacoes: formData.observacoes,
+      responsavel: formData.responsavel,
     };
 
     // Google Calendar sync
@@ -178,7 +202,7 @@ const CalendarioTecnico = () => {
       date: formData.data,
       startTime: formData.horaInicio,
       endTime: formData.horaFim,
-      description: `Criado por: ${user.full_name}${formData.paraNome ? `\nPara: ${formData.paraNome}` : ""}\nOrigem: MedWork`,
+      description: `Criado por: ${user.full_name}${formData.paraNome ? `\nPara: ${formData.paraNome}` : ""}\nOrigem: Week MedWork`,
       attendees,
     };
 
@@ -520,6 +544,49 @@ const CalendarioTecnico = () => {
               </Select>
             </div>
 
+            {/* Empresa / Localização / Observações / Responsável */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Empresa</Label>
+              <Input value={formData.empresa} onChange={(e) => setFormData({ ...formData, empresa: e.target.value })} placeholder="Nome da empresa" className="h-9 rounded-lg text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Localização</Label>
+              <Input
+                value={formData.localizacao}
+                onChange={(e) => setFormData({ ...formData, localizacao: e.target.value })}
+                placeholder="Endereço ou URL do Maps"
+                className="h-9 rounded-lg text-sm"
+              />
+              <p className="text-[10px] text-muted-foreground">Pode colar um endereço ou um link direto do Google Maps.</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Responsável</Label>
+              <Select
+                value={formData.responsavel || "nenhum"}
+                onValueChange={(v) => setFormData({ ...formData, responsavel: v === "nenhum" ? "" : v })}
+              >
+                <SelectTrigger className="h-9 rounded-lg text-xs"><SelectValue placeholder="Selecione o responsável" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nenhum">Nenhum</SelectItem>
+                  {users
+                    .filter((u) => u.sectors?.some((s: any) => ["tecnico", "psicossocial", "saude"].includes(s)))
+                    .map((u) => (
+                      <SelectItem key={u.id} value={u.full_name}>{u.full_name}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Observações</Label>
+              <textarea
+                value={formData.observacoes}
+                onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+                placeholder="Notas adicionais…"
+                rows={2}
+                className="w-full text-sm rounded-lg border border-input bg-background px-3 py-2"
+              />
+            </div>
+
             <div className="flex gap-2 pt-2">
               <Button variant="outline" onClick={() => { setModalOpen(false); resetForm(); }} className="flex-1 h-9 rounded-lg text-xs btn-3d neon-hover animate-float">
                 Cancelar
@@ -600,6 +667,44 @@ const CalendarioTecnico = () => {
                   </div>
                 )}
 
+                {/* Empresa / Responsável / Localização / Observações */}
+                {selectedEvent.empresa && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground text-xs">Empresa</span>
+                    <span className="font-medium text-xs">{selectedEvent.empresa}</span>
+                  </div>
+                )}
+                {selectedEvent.responsavel && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground text-xs">Responsável</span>
+                    <span className="font-medium text-xs">{selectedEvent.responsavel}</span>
+                  </div>
+                )}
+                {selectedEvent.localizacao && (
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="text-muted-foreground text-xs">Localização</span>
+                    <a
+                      href={
+                        selectedEvent.localizacao.startsWith("http")
+                          ? selectedEvent.localizacao
+                          : `https://www.google.com/maps/search/${encodeURIComponent(selectedEvent.localizacao)}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-primary text-xs hover:underline max-w-[180px] truncate"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      📍 {selectedEvent.localizacao.startsWith("http") ? "Abrir no Maps" : selectedEvent.localizacao}
+                    </a>
+                  </div>
+                )}
+                {selectedEvent.observacoes && (
+                  <div>
+                    <span className="text-muted-foreground text-xs block mb-1">Observações</span>
+                    <p className="text-xs text-foreground bg-muted/50 rounded-lg p-2">{selectedEvent.observacoes}</p>
+                  </div>
+                )}
+
                 {/* Criado por */}
                 <div className="flex justify-between items-center pt-1 border-t border-border">
                   <span className="text-muted-foreground flex items-center gap-1.5">
@@ -624,7 +729,7 @@ const CalendarioTecnico = () => {
                           date: dateStr,
                           startTime: ev.horaInicio,
                           endTime: ev.horaFim,
-                          description: `Criado por: ${ev.criadoPor}${ev.instrutor ? `\nInstrutor: ${ev.instrutor}` : ""}\nOrigem: MedWork`,
+                          description: `Criado por: ${ev.criadoPor}${ev.instrutor ? `\nInstrutor: ${ev.instrutor}` : ""}\nOrigem: Week MedWork`,
                         });
                         if (googleEventId) {
                           await supabase.from("medwork_compromissos").update({ google_event_id: googleEventId }).eq("id", ev.id);
@@ -647,7 +752,7 @@ const CalendarioTecnico = () => {
                       const start = ev.horaInicio && ev.horaInicio !== "A confirmar" ? ev.horaInicio.replace(":", "") + "00" : "080000";
                       const end = ev.horaFim ? ev.horaFim.replace(":", "") + "00" : "120000";
                       const title = encodeURIComponent(`${getTipoLabel(ev.tipo)}${ev.instrutor ? ` - ${ev.instrutor}` : ""}`);
-                      const details = encodeURIComponent(`Criado por: ${ev.criadoPor}${ev.instrutor ? `\nInstrutor: ${ev.instrutor}` : ""}\nOrigem: MedWork`);
+                      const details = encodeURIComponent(`Criado por: ${ev.criadoPor}${ev.instrutor ? `\nInstrutor: ${ev.instrutor}` : ""}\nOrigem: Week MedWork`);
                       const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}T${start}/${dateStr}T${end}&details=${details}`;
                       window.open(url, "_blank");
                     }}

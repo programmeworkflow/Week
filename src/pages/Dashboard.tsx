@@ -922,6 +922,43 @@ const Dashboard = () => {
           )}
         </div>
 
+        {isGeneralDashboard && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 animate-fade-in">
+            {[
+              {
+                label: "Total de Projetos",
+                value: tecnicoProjects.filter(tp => (tp as any).status_tecnico !== "Arquivado").length
+                  + projects.filter(p => p.status !== "archived").length,
+                color: "text-primary",
+              },
+              {
+                label: "Concluídos",
+                value: tecnicoProjects.filter(tp => (tp as any).status_tecnico === "Finalizada").length
+                  + projects.filter(p => p.status === "done").length,
+                color: "text-emerald-400",
+              },
+              {
+                label: "Atrasados",
+                value: projects.filter(p => p.due_date && new Date(p.due_date) < new Date() && p.status !== "done" && p.status !== "archived").length,
+                color: "text-red-400",
+              },
+              {
+                label: "Novos esta semana",
+                value: projects.filter(p => {
+                  const created = new Date(p.created_at);
+                  return (Date.now() - created.getTime()) / (1000 * 60 * 60 * 24) <= 7;
+                }).length,
+                color: "text-cyan-400",
+              },
+            ].map(card => (
+              <div key={card.label} className="bg-card rounded-xl border border-border p-5 neon-hover">
+                <p className="text-xs text-muted-foreground mb-1">{card.label}</p>
+                <p className={`text-3xl font-bold ${card.color}`}>{card.value}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
         {isDiretoria ? (
           <>
             <DiretoriaBoard name="Samuel" columns={diretoriaColumns} projects={mainProjects} users={users} onDrop={handleDrop} locked={isGeneralDashboard} onTransfer={(id) => updateProject(id, { is_renovation: true })} onCardClick={(p) => navigate(`/projeto/${p.id}`)} />

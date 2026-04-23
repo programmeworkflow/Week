@@ -38,7 +38,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               {/* Register route removed */}
-              <Route path="/dashboard/projects" element={<Navigate to="/profile" replace />} />
+              <Route path="/dashboard/projects" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/dashboard/projects/:sector" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/projetos" element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
               <Route path="/projetos/:sector" element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />

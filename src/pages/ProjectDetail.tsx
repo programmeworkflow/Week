@@ -13,7 +13,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Trash2, Send, Edit2, Copy, Mic, Square, Play, Pause, ArrowRightLeft } from "lucide-react";
+import { ArrowLeft, Trash2, Send, Edit2, Copy, Mic, Square, Play, Pause, ArrowRightLeft, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Project, SECTORS, Sector, ProjectAttachment, TecnicoProject, KanbanVariavelCard, TECNICO_RESPONSAVEIS, TECNICO_PRIORIDADES, TECNICO_STATUS_OPTIONS } from "@/lib/mock-data";
@@ -720,7 +720,22 @@ const ProjectDetail = () => {
                           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Contato</p>
                           <div className="grid grid-cols-3 gap-4">
                             <div><span className="text-xs font-medium text-muted-foreground">Nome</span><p className="text-sm text-foreground">{tp.contato_nome || "—"}</p></div>
-                            <div><span className="text-xs font-medium text-muted-foreground">Telefone</span><p className="text-sm text-foreground">{tp.contato_telefone || "—"}</p></div>
+                            <div>
+                              <span className="text-xs font-medium text-muted-foreground">Telefone</span>
+                              <div className="flex items-center gap-1.5">
+                                <p className="text-sm text-foreground">{tp.contato_telefone || "—"}</p>
+                                {tp.contato_telefone && (
+                                  <a
+                                    href={`https://wa.me/55${(tp.contato_telefone || "").replace(/\D/g, "")}?text=${encodeURIComponent(`Olá${tp.contato_nome ? ` ${tp.contato_nome}` : ""}! Entrando em contato sobre o projeto "${tp.empresa || (project as any).project_name || ""}" - Week MedWork`)}`}
+                                    target="_blank" rel="noopener noreferrer"
+                                    className="p-1 rounded hover:bg-green-500/10 text-green-600"
+                                    title="Abrir no WhatsApp"
+                                  >
+                                    <MessageCircle className="w-3.5 h-3.5" />
+                                  </a>
+                                )}
+                              </div>
+                            </div>
                             <div><span className="text-xs font-medium text-muted-foreground">Email</span><p className="text-sm text-foreground">{tp.contato_email || "—"}</p></div>
                           </div>
                         </>
