@@ -421,6 +421,16 @@ const Dashboard = () => {
   const [editingVariavel, setEditingVariavel] = useState<KanbanVariavelCard | null>(null);
   const [viewingVariavel, setViewingVariavel] = useState<KanbanVariavelCard | null>(null);
   const [transferNotification, setTransferNotification] = useState<string | null>(null);
+  // In-memory ref de projetos que já receberam pontuação, preenchido na carga
+  // Serve como trava sincrona anti-race (evita 2 INSERTs se arrastar done→out→done rápido)
+  const awardedRef = useRef<Set<string>>(new Set());
+  const awardKey = (name: string, sec: string) => `${name}::${sec}`;
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("medwork_premiacao").select("project_name,sector");
+      if (data) data.forEach((r: any) => awardedRef.current.add(awardKey(r.project_name || "", r.sector || "")));
+    })();
+  }, []);
   // Chat state for técnico edit dialog
   const [tecnicoChatInput, setTecnicoChatInput] = useState("");
   const [tecnicoChatAttachments, setTecnicoChatAttachments] = useState<Omit<ProjectAttachment, "id">[]>([]);
@@ -576,22 +586,33 @@ const Dashboard = () => {
     // Points go to whoever clicked/dragged the project to "done".
     // Award only once per (project_name, sector) — idempotent.
     if (!user) return;
-    const { data: existing } = await supabase
-      .from("medwork_premiacao")
-      .select("id")
-      .eq("project_name", projectName)
-      .eq("sector", sectorName)
-      .maybeSingle();
-    if (existing) return;
-    await supabase.from("medwork_premiacao").insert({
-      id: String(Date.now()),
-      user_name: user.full_name,
-      user_id: user.id,
-      project_name: projectName,
-      sector: sectorName,
-      points: 100,
-      completed_at: new Date().toISOString(),
-    });
+    const k = awardKey(projectName, sectorName);
+    // Trava sincrona: se já marcamos nesta sessão ou se já veio do banco, aborta
+    if (awardedRef.current.has(k)) return;
+    awardedRef.current.add(k); // marca ANTES do await pra fechar a janela de race
+    try {
+      // Segunda checagem no banco (caso outro usuário tenha pontuado)
+      const { data: existing } = await supabase
+        .from("medwork_premiacao")
+        .select("id")
+        .eq("project_name", projectName)
+        .eq("sector", sectorName)
+        .maybeSingle();
+      if (existing) return;
+      await supabase.from("medwork_premiacao").insert({
+        id: String(Date.now()),
+        user_name: user.full_name,
+        user_id: user.id,
+        project_name: projectName,
+        sector: sectorName,
+        points: 100,
+        completed_at: new Date().toISOString(),
+      });
+    } catch (err) {
+      // Em caso de erro, permite nova tentativa
+      awardedRef.current.delete(k);
+      console.error("registerPremiacao error:", err);
+    }
   };
 
   const handleDrop = (projectId: string, newStatus: Project["status"]) => {
