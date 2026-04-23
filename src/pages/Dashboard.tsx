@@ -421,10 +421,24 @@ const Dashboard = () => {
   const [editingVariavel, setEditingVariavel] = useState<KanbanVariavelCard | null>(null);
   const [viewingVariavel, setViewingVariavel] = useState<KanbanVariavelCard | null>(null);
   const [transferNotification, setTransferNotification] = useState<string | null>(null);
+  // Prompt de "quem deve ganhar a pontuação?" quando o projeto não tem responsável
+  const [askResponsavel, setAskResponsavel] = useState<{
+    projectName: string;
+    sector: string;
+    resolve: (picked: { name: string; id: string } | null) => void;
+  } | null>(null);
   // In-memory ref de projetos que já receberam pontuação, preenchido na carga
   // Serve como trava sincrona anti-race (evita 2 INSERTs se arrastar done→out→done rápido)
   const awardedRef = useRef<Set<string>>(new Set());
   const awardKey = (name: string, sec: string) => `${name}::${sec}`;
+
+  // Abre o modal "quem vai receber os pontos?" quando o projeto não tem responsável.
+  // Resolve com o usuário escolhido ou null (seguir sem responsável).
+  const promptResponsavel = (projectName: string, sec: string): Promise<{ name: string; id: string } | null> => {
+    return new Promise((resolve) => {
+      setAskResponsavel({ projectName, sector: sec, resolve });
+    });
+  };
   useEffect(() => {
     (async () => {
       const { data } = await supabase.from("medwork_premiacao").select("project_name,sector");
@@ -637,8 +651,13 @@ const Dashboard = () => {
     if (newStatus === "done") {
       const p = sectorProjects.find(pr => pr.id === projectId);
       if (p && p.status !== "done") {
-        // Tenta pontuar primeiro; só mostra toast se for premiação nova
-        const awarded = await registerPremiacao(p.project_name, sector || "geral", undefined, p.responsible_ids);
+        let responsibleIds = p.responsible_ids || [];
+        // Se não tem responsável, pergunta
+        if (responsibleIds.length === 0) {
+          const picked = await promptResponsavel(p.project_name, sector || "geral");
+          if (picked) responsibleIds = [picked.id];
+        }
+        const awarded = await registerPremiacao(p.project_name, sector || "geral", undefined, responsibleIds);
         if (awarded) {
           setAchievementName(p.project_name);
           setShowAchievement(true);
@@ -652,7 +671,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleTecnicoDrop = (projectId: string, newStatus: Project["status"]) => {
+  const handleTecnicoDrop = async (projectId: string, newStatus: Project["status"]) => {
     const reverseStatusMap: Record<Project["status"], string> = {
       not_authenticated: "Não cadastradas no ESO",
       not_started: "Não iniciadas",
@@ -664,12 +683,16 @@ const Dashboard = () => {
     if (newStatus === "done") {
       const tp = tecnicoProjects.find(t => t.id === projectId);
       if (tp && tp.status_tecnico !== "Finalizada") {
-        registerPremiacao(tp.empresa, "tecnico", tp.responsavel).then((awarded) => {
-          if (awarded) {
-            setAchievementName(tp.empresa);
-            setShowAchievement(true);
-          }
-        });
+        let responsavel = tp.responsavel;
+        if (!responsavel || responsavel === "Zona de Espera") {
+          const picked = await promptResponsavel(tp.empresa, "tecnico");
+          if (picked) responsavel = picked.name as any;
+        }
+        const awarded = await registerPremiacao(tp.empresa, "tecnico", responsavel);
+        if (awarded) {
+          setAchievementName(tp.empresa);
+          setShowAchievement(true);
+        }
       }
     }
     const tecnicoStatus = reverseStatusMap[newStatus];
@@ -678,17 +701,21 @@ const Dashboard = () => {
     }
   };
 
-  const handleVariavelDrop = (cardId: string, newStatus: Project["status"]) => {
+  const handleVariavelDrop = async (cardId: string, newStatus: Project["status"]) => {
     if (newStatus === "done") {
       const card = kanbanVariavelCards.find((c) => c.id === cardId);
       if (card && card.status !== "done") {
         const name = card.title || card.empresa || "Projeto";
-        registerPremiacao(name, "tecnico", (card as any).responsavel).then((awarded) => {
-          if (awarded) {
-            setAchievementName(name);
-            setShowAchievement(true);
-          }
-        });
+        let responsavel = (card as any).responsavel;
+        if (!responsavel) {
+          const picked = await promptResponsavel(name, "tecnico");
+          if (picked) responsavel = picked.name;
+        }
+        const awarded = await registerPremiacao(name, "tecnico", responsavel);
+        if (awarded) {
+          setAchievementName(name);
+          setShowAchievement(true);
+        }
       }
     }
     updateKanbanVariavelStatus(cardId, newStatus);
@@ -893,6 +920,52 @@ const Dashboard = () => {
     <div className="min-h-screen flex">
       <AppSidebar />
       <AchievementToast show={showAchievement} projectName={achievementName} onClose={() => setShowAchievement(false)} />
+
+      {/* Prompt: quem deve receber a pontuação? */}
+      <Dialog open={!!askResponsavel} onOpenChange={(open) => {
+        if (!open && askResponsavel) { askResponsavel.resolve(null); setAskResponsavel(null); }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Projeto sem responsável</DialogTitle>
+          </DialogHeader>
+          {askResponsavel && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">"{askResponsavel.projectName}"</span> não tem responsável cadastrado. Quem deve ganhar a pontuação?
+              </p>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {users
+                  .filter((u) => u.sectors?.includes(askResponsavel.sector as any))
+                  .map((u) => (
+                    <button
+                      key={u.id}
+                      onClick={() => { askResponsavel.resolve({ name: u.full_name, id: u.id }); setAskResponsavel(null); }}
+                      className="w-full text-left px-3 py-2 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition-all flex items-center gap-2"
+                    >
+                      <div className="w-7 h-7 rounded-full gradient-primary flex items-center justify-center text-[10px] font-bold text-primary-foreground">
+                        {u.full_name.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                      </div>
+                      <span className="text-sm text-foreground">{u.full_name}</span>
+                    </button>
+                  ))}
+                {users.filter((u) => u.sectors?.includes(askResponsavel.sector as any)).length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-3">Nenhum usuário cadastrado para este setor.</p>
+                )}
+              </div>
+              <div className="pt-2 border-t border-border">
+                <Button
+                  variant="outline"
+                  onClick={() => { askResponsavel.resolve(null); setAskResponsavel(null); }}
+                  className="w-full rounded-lg"
+                >
+                  Seguir sem responsável (vai para "Desconhecido")
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Transfer notification banner */}
       {transferNotification && (
