@@ -97,13 +97,32 @@ const TecnicoSpreadsheet = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterDataDe, setFilterDataDe] = useState("");
   const [filterDataAte, setFilterDataAte] = useState("");
+  const [sortBy, setSortBy] = useState<string>("default");
 
   const hasActiveFilters = filterEmpresa || filterCnpj || filterResponsavel !== "all" || filterRegiao || filterPrioridade !== "all" || filterStatus !== "all" || filterDataDe || filterDataAte;
+  const hasActiveSort = sortBy !== "default";
 
   const clearFilters = () => {
     setFilterEmpresa(""); setFilterCnpj(""); setFilterResponsavel("all");
     setFilterRegiao(""); setFilterPrioridade("all"); setFilterStatus("all");
-    setFilterDataDe(""); setFilterDataAte("");
+    setFilterDataDe(""); setFilterDataAte(""); setSortBy("default");
+  };
+
+  // Weight maps for ordering by enum-like fields
+  const prioridadeWeight: Record<string, number> = { "Baixa": 1, "Média": 2, "Alta": 3, "Crítica": 4 };
+  const statusWeight: Record<string, number> = {
+    "Não cadastradas no ESO": 1,
+    "Não iniciadas": 2,
+    "Visita pendente": 3,
+    "Documentação pendente": 4,
+    "Revisão": 5,
+    "Finalizada": 6,
+    "Arquivado": 7,
+  };
+  const parseDate = (s?: string): number => {
+    if (!s || !isValidDate(s)) return 0;
+    const [dd, mm, yyyy] = s.split("/").map(Number);
+    return new Date(yyyy, mm - 1, dd).getTime();
   };
 
   // Apply filters — all string comparisons are null-safe
@@ -132,6 +151,39 @@ const TecnicoSpreadsheet = () => {
       const [dd, mm, yyyy] = p.data.split("/").map(Number);
       return new Date(yyyy, mm - 1, dd) <= until;
     });
+  }
+
+  // Apply sorting (does not mutate context array)
+  if (sortBy !== "default") {
+    const cmp = new Intl.Collator("pt-BR", { sensitivity: "base", numeric: true });
+    const arr = [...filteredProjects];
+    const sorters: Record<string, (a: TecnicoProject, b: TecnicoProject) => number> = {
+      empresa_az: (a, b) => cmp.compare(a.empresa || "", b.empresa || ""),
+      empresa_za: (a, b) => cmp.compare(b.empresa || "", a.empresa || ""),
+      cnpj_az: (a, b) => cmp.compare(a.cnpj || "", b.cnpj || ""),
+      cnpj_za: (a, b) => cmp.compare(b.cnpj || "", a.cnpj || ""),
+      responsavel_az: (a, b) => cmp.compare(a.responsavel || "", b.responsavel || ""),
+      responsavel_za: (a, b) => cmp.compare(b.responsavel || "", a.responsavel || ""),
+      regiao_az: (a, b) => cmp.compare(a.regiao || "", b.regiao || ""),
+      regiao_za: (a, b) => cmp.compare(b.regiao || "", a.regiao || ""),
+      prioridade_desc: (a, b) => (prioridadeWeight[b.prioridade] || 0) - (prioridadeWeight[a.prioridade] || 0),
+      prioridade_asc: (a, b) => (prioridadeWeight[a.prioridade] || 0) - (prioridadeWeight[b.prioridade] || 0),
+      status_asc: (a, b) => (statusWeight[a.status_tecnico] || 0) - (statusWeight[b.status_tecnico] || 0),
+      status_desc: (a, b) => (statusWeight[b.status_tecnico] || 0) - (statusWeight[a.status_tecnico] || 0),
+      data_recente: (a, b) => parseDate(b.data) - parseDate(a.data),
+      data_antiga: (a, b) => {
+        const ad = parseDate(a.data); const bd = parseDate(b.data);
+        if (ad === 0 && bd === 0) return 0;
+        if (ad === 0) return 1; // sem data vai pro fim
+        if (bd === 0) return -1;
+        return ad - bd;
+      },
+    };
+    const sortFn = sorters[sortBy];
+    if (sortFn) {
+      arr.sort(sortFn);
+      filteredProjects = arr;
+    }
   }
 
   const handleAddRow = () => {
@@ -199,11 +251,36 @@ const TecnicoSpreadsheet = () => {
         >
           <Filter className="w-4 h-4" />
           Filtros
-          {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />}
+          {(hasActiveFilters || hasActiveSort) && <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />}
         </Button>
-        {hasActiveFilters && (
+
+        {/* Sort selector — always visible */}
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="h-9 text-xs rounded-lg w-[210px]" title="Ordenar por">
+            <SelectValue placeholder="Ordenar por…" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="default">Ordem padrão</SelectItem>
+            <SelectItem value="empresa_az">Empresa (A → Z)</SelectItem>
+            <SelectItem value="empresa_za">Empresa (Z → A)</SelectItem>
+            <SelectItem value="prioridade_desc">Prioridade (Crítica → Baixa)</SelectItem>
+            <SelectItem value="prioridade_asc">Prioridade (Baixa → Crítica)</SelectItem>
+            <SelectItem value="data_recente">Data (mais recente)</SelectItem>
+            <SelectItem value="data_antiga">Data (mais antiga)</SelectItem>
+            <SelectItem value="responsavel_az">Responsável (A → Z)</SelectItem>
+            <SelectItem value="responsavel_za">Responsável (Z → A)</SelectItem>
+            <SelectItem value="regiao_az">Região (A → Z)</SelectItem>
+            <SelectItem value="regiao_za">Região (Z → A)</SelectItem>
+            <SelectItem value="status_asc">Status (do mais novo ao concluído)</SelectItem>
+            <SelectItem value="status_desc">Status (do concluído ao mais novo)</SelectItem>
+            <SelectItem value="cnpj_az">CNPJ (crescente)</SelectItem>
+            <SelectItem value="cnpj_za">CNPJ (decrescente)</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {(hasActiveFilters || hasActiveSort) && (
           <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-xs text-muted-foreground hover:text-destructive">
-            <X className="w-3 h-3" /> Limpar filtros
+            <X className="w-3 h-3" /> Limpar
           </Button>
         )}
 
