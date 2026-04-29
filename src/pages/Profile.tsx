@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AddMemberModal } from "@/components/AddMemberModal";
+import { CarrosManager } from "@/components/CarrosManager";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -257,6 +258,8 @@ const Profile = () => {
                   </Card>
                 ))}
               </div>
+
+              <CarrosManager />
             </>
           )}
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useProjects } from "@/contexts/ProjectContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -12,6 +12,8 @@ import { Switch } from "@/components/ui/switch";
 import { Plus, Layers, PinOff, RefreshCw, Crown, Calendar, Car, Monitor } from "lucide-react";
 import { SECTORS, Sector } from "@/lib/mock-data";
 import { formatCNPJ, formatTelefone } from "@/lib/formatters";
+import { Carro, fetchCarrosAtivos, findCarroConflito } from "@/lib/carros";
+import { toast } from "sonner";
 
 
 interface NewProjectModalProps {
@@ -45,11 +47,30 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
     horaFim: "",
     tipo: "compromisso" as "treinamento" | "visita" | "reuniao" | "compromisso",
     usarCarro: false,
-    tipoCarro: "" as "" | "mobi" | "alugado",
+    carroId: "" as string,
     usarDataShow: false,
     localizacao: "",
     observacoes: "",
   });
+
+  // Carros ativos + compromissos do dia pra detectar conflito
+  const [carros, setCarros] = useState<Carro[]>([]);
+  const [compsNoDia, setCompsNoDia] = useState<{ id: string; carroId: string | null; data: Date | string; horaInicio: string; horaFim: string }[]>([]);
+
+  useEffect(() => {
+    if (agendar) fetchCarrosAtivos().then(setCarros);
+  }, [agendar]);
+
+  useEffect(() => {
+    if (!agendar || !form.due_date) { setCompsNoDia([]); return; }
+    supabase
+      .from("medwork_compromissos")
+      .select("id, carro_id, data, hora_inicio, hora_fim")
+      .eq("data", form.due_date)
+      .then(({ data }) => {
+        setCompsNoDia((data || []).map((c: any) => ({ id: c.id, carroId: c.carro_id, data: c.data, horaInicio: c.hora_inicio || "", horaFim: c.hora_fim || "" })));
+      });
+  }, [agendar, form.due_date]);
 
   const isTecnico = form.sector === "tecnico";
   const isComercial = form.sector === "comercial";
@@ -62,6 +83,18 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
 
     // Se marcou "lançar no calendário", insere compromisso ligado a este projeto
     if (agendar && form.due_date && agenda.horaInicio) {
+      // Conflict check
+      if (agenda.usarCarro && agenda.carroId) {
+        const conflito = findCarroConflito(
+          agenda.carroId, new Date(form.due_date + "T12:00:00"),
+          agenda.horaInicio, agenda.horaFim, compsNoDia
+        );
+        if (conflito) {
+          const carroNome = carros.find(c => c.id === agenda.carroId)?.nome || "esse carro";
+          toast.error(`${carroNome} já está reservado de ${conflito.horaInicio} às ${conflito.horaFim} nesse dia`);
+          return;
+        }
+      }
       try {
         const responsavelName = users.find((u) => form.responsible_ids[0] === u.id)?.full_name || "";
         await supabase.from("medwork_compromissos").insert({
@@ -72,7 +105,8 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
           hora_fim: agenda.horaFim || "",
           tipo: agenda.tipo,
           usar_carro: agenda.usarCarro,
-          tipo_carro: agenda.usarCarro ? agenda.tipoCarro : "",
+          tipo_carro: "",
+          carro_id: agenda.usarCarro ? agenda.carroId || null : null,
           usar_data_show: agenda.usarDataShow,
           criado_por: user?.full_name || "",
           instrutor: "",
@@ -152,7 +186,7 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
     });
     setQuadroTipo("fixo");
     setAgendar(false);
-    setAgenda({ horaInicio: "", horaFim: "", tipo: "compromisso", usarCarro: false, tipoCarro: "", usarDataShow: false, localizacao: "", observacoes: "" });
+    setAgenda({ horaInicio: "", horaFim: "", tipo: "compromisso", usarCarro: false, carroId: "", usarDataShow: false, localizacao: "", observacoes: "" });
     setOpen(false);
   };
 
@@ -469,20 +503,42 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
                 </div>
                 <div className="flex items-center justify-between py-1">
                   <Label className="text-xs flex items-center gap-1.5"><Car className="w-3.5 h-3.5 text-cyan-400" /> Vai usar carro?</Label>
-                  <Switch checked={agenda.usarCarro} onCheckedChange={(v) => setAgenda({ ...agenda, usarCarro: v, tipoCarro: v ? agenda.tipoCarro : "" })} />
+                  <Switch checked={agenda.usarCarro} onCheckedChange={(v) => setAgenda({ ...agenda, usarCarro: v, carroId: v ? agenda.carroId : "" })} />
                 </div>
-                {agenda.usarCarro && (
-                  <div className="space-y-1 pl-5">
-                    <Label className="text-xs">Qual carro?</Label>
-                    <Select value={agenda.tipoCarro || ""} onValueChange={(v) => setAgenda({ ...agenda, tipoCarro: v as "mobi" | "alugado" })}>
-                      <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Escolha..." /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="mobi">Mobi</SelectItem>
-                        <SelectItem value="alugado">Alugado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+                {agenda.usarCarro && (() => {
+                  const checkable = form.due_date && agenda.horaInicio && agenda.horaFim;
+                  const carrosComStatus = carros.map(c => {
+                    if (!checkable) return { ...c, conflito: null as ReturnType<typeof findCarroConflito> };
+                    const conflito = findCarroConflito(
+                      c.id, new Date(form.due_date + "T12:00:00"),
+                      agenda.horaInicio, agenda.horaFim, compsNoDia
+                    );
+                    return { ...c, conflito };
+                  });
+                  return (
+                    <div className="space-y-1 pl-5">
+                      <Label className="text-xs">Qual carro?</Label>
+                      {carros.length === 0 ? (
+                        <p className="text-[11px] text-muted-foreground">Nenhum carro cadastrado. Pede pra um admin adicionar em Perfil → Carros.</p>
+                      ) : (
+                        <Select value={agenda.carroId} onValueChange={(v) => setAgenda({ ...agenda, carroId: v })}>
+                          <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Escolha..." /></SelectTrigger>
+                          <SelectContent>
+                            {carrosComStatus.map(c => (
+                              <SelectItem key={c.id} value={c.id} disabled={!!c.conflito}>
+                                {c.nome}{c.placa ? ` (${c.placa})` : ""}
+                                {c.conflito && <span className="text-destructive text-[10px] ml-2">— ocupado {c.conflito.horaInicio}-{c.conflito.horaFim}</span>}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      {!checkable && carros.length > 0 && (
+                        <p className="text-[11px] text-muted-foreground">Preenche data + horários pra ver quais estão livres.</p>
+                      )}
+                    </div>
+                  );
+                })()}
                 <div className="flex items-center justify-between py-1">
                   <Label className="text-xs flex items-center gap-1.5"><Monitor className="w-3.5 h-3.5 text-violet-400" /> Usar Data Show?</Label>
                   <Switch checked={agenda.usarDataShow} onCheckedChange={(v) => setAgenda({ ...agenda, usarDataShow: v })} />

@@ -16,6 +16,7 @@ import { getSectorTitle } from "@/lib/sectors";
 import { Sector } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { Plus, ChevronLeft, ChevronRight, Pencil, Trash2, X, Calendar as CalendarIcon, Car, Monitor, User as UserIcon } from "lucide-react";
+import { Carro, fetchCarrosAtivos, findCarroConflito } from "@/lib/carros";
 import {
   format,
   startOfMonth,
@@ -37,7 +38,9 @@ interface Compromisso {
   horaInicio: string;
   horaFim: string;
   usarCarro: boolean;
-  tipoCarro?: "mobi" | "alugado";
+  tipoCarro?: "mobi" | "alugado"; // legado — não usar pra novos
+  carroId?: string | null;
+  carroNome?: string;
   usarDataShow: boolean;
   tipo: "treinamento" | "visita" | "reuniao" | "compromisso";
   criadoPor: string;
@@ -58,19 +61,27 @@ const CalendarioTecnico = () => {
   const [baseMonth, setBaseMonth] = useState(new Date());
   const [compromissos, setCompromissos] = useState<Compromisso[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [carros, setCarros] = useState<Carro[]>([]);
 
-  // Load compromissos from Supabase
+  // Load compromissos + carros from Supabase
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase.from("medwork_compromissos").select("*").eq("sector", currentSector);
-      if (data) {
-        setCompromissos(data.map((c: any) => ({
+      const [compRes, carrosList] = await Promise.all([
+        supabase.from("medwork_compromissos").select("*").eq("sector", currentSector),
+        fetchCarrosAtivos(),
+      ]);
+      setCarros(carrosList);
+      const carroMap = new Map(carrosList.map(c => [c.id, c.nome]));
+      if (compRes.data) {
+        setCompromissos(compRes.data.map((c: any) => ({
           id: c.id,
           data: new Date(c.data),
           horaInicio: c.hora_inicio || "",
           horaFim: c.hora_fim || "",
           usarCarro: c.usar_carro || false,
           tipoCarro: c.tipo_carro || undefined,
+          carroId: c.carro_id || null,
+          carroNome: c.carro_id ? carroMap.get(c.carro_id) : undefined,
           usarDataShow: c.usar_data_show || false,
           tipo: c.tipo || "treinamento",
           criadoPor: c.criado_por || "",
@@ -117,7 +128,7 @@ const CalendarioTecnico = () => {
     horaInicio: "",
     horaFim: "",
     usarCarro: false,
-    tipoCarro: "" as "" | "mobi" | "alugado",
+    carroId: "" as string,
     usarDataShow: false,
     tipo: "" as "" | "treinamento" | "visita" | "reuniao" | "compromisso",
     paraEmail: "",
@@ -132,7 +143,7 @@ const CalendarioTecnico = () => {
   if (!canAccessSector(currentSector) && !user.is_admin) return <Navigate to="/dashboard/projects" replace />;
 
   const resetForm = () => {
-    setFormData({ data: "", horaInicio: "", horaFim: "", usarCarro: false, tipoCarro: "", usarDataShow: false, tipo: "", paraEmail: "", paraNome: "", empresa: "", localizacao: "", observacoes: "", responsavel: "" });
+    setFormData({ data: "", horaInicio: "", horaFim: "", usarCarro: false, carroId: "", usarDataShow: false, tipo: "", paraEmail: "", paraNome: "", empresa: "", localizacao: "", observacoes: "", responsavel: "" });
     setEditingId(null);
   };
 
@@ -147,7 +158,7 @@ const CalendarioTecnico = () => {
       horaInicio: c.horaInicio,
       horaFim: c.horaFim,
       usarCarro: c.usarCarro,
-      tipoCarro: c.tipoCarro || "",
+      carroId: c.carroId || "",
       usarDataShow: c.usarDataShow,
       tipo: c.tipo,
       paraEmail: c.paraEmail || "",
@@ -165,14 +176,31 @@ const CalendarioTecnico = () => {
   const handleSave = async () => {
     if (!formData.data || !formData.horaInicio || !formData.tipo) return;
 
+    // Conflict check: carro já reservado naquele intervalo?
+    if (formData.usarCarro && formData.carroId) {
+      const dataObj = new Date(formData.data + "T12:00:00");
+      const conflito = findCarroConflito(
+        formData.carroId, dataObj, formData.horaInicio, formData.horaFim,
+        compromissos.map(c => ({ id: c.id, carroId: c.carroId, data: c.data, horaInicio: c.horaInicio, horaFim: c.horaFim })),
+        editingId || undefined
+      );
+      if (conflito) {
+        const carroNome = carros.find(c => c.id === formData.carroId)?.nome || "esse carro";
+        toast.error(`${carroNome} já está reservado de ${conflito.horaInicio} às ${conflito.horaFim} nesse dia`);
+        return;
+      }
+    }
+
     const id = editingId || crypto.randomUUID();
+    const carroSelecionado = carros.find(c => c.id === formData.carroId);
     const compromisso: Compromisso = {
       id,
       data: new Date(formData.data + "T12:00:00"),
       horaInicio: formData.horaInicio,
       horaFim: formData.horaFim,
       usarCarro: formData.usarCarro,
-      tipoCarro: formData.usarCarro ? (formData.tipoCarro as "mobi" | "alugado") : undefined,
+      carroId: formData.usarCarro ? formData.carroId : null,
+      carroNome: carroSelecionado?.nome,
       usarDataShow: formData.usarDataShow,
       tipo: formData.tipo as any,
       criadoPor: user.full_name,
@@ -186,7 +214,8 @@ const CalendarioTecnico = () => {
       id, sector: currentSector, data: formData.data,
       hora_inicio: formData.horaInicio, hora_fim: formData.horaFim,
       tipo: formData.tipo, usar_carro: formData.usarCarro,
-      tipo_carro: formData.tipoCarro || "", usar_data_show: formData.usarDataShow,
+      tipo_carro: "", carro_id: formData.usarCarro ? formData.carroId || null : null,
+      usar_data_show: formData.usarDataShow,
       criado_por: user.full_name, instrutor: "", origem: "manual",
       para_email: formData.paraEmail, para_nome: formData.paraNome,
       empresa: formData.empresa,
@@ -499,20 +528,44 @@ const CalendarioTecnico = () => {
               <>
                 <div className="flex items-center justify-between py-1">
                   <Label className="text-xs flex items-center gap-1.5"><Car className="w-3.5 h-3.5 text-cyan-400" /> Vai usar carro?</Label>
-                  <Switch checked={formData.usarCarro} onCheckedChange={(v) => setFormData({ ...formData, usarCarro: v, tipoCarro: v ? formData.tipoCarro : "" })} />
+                  <Switch checked={formData.usarCarro} onCheckedChange={(v) => setFormData({ ...formData, usarCarro: v, carroId: v ? formData.carroId : "" })} />
                 </div>
-                {formData.usarCarro && (
-                  <div className="space-y-1.5 animate-fade-in">
-                    <Label className="text-xs">Tipo de carro</Label>
-                    <Select value={formData.tipoCarro} onValueChange={(v) => setFormData({ ...formData, tipoCarro: v as "mobi" | "alugado" })}>
-                      <SelectTrigger className="h-9 rounded-lg text-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="mobi">Mobi</SelectItem>
-                        <SelectItem value="alugado">Alugado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+                {formData.usarCarro && (() => {
+                  const dataObj = formData.data ? new Date(formData.data + "T12:00:00") : null;
+                  const checkable = dataObj && formData.horaInicio && formData.horaFim;
+                  const carrosComStatus = carros.map(c => {
+                    if (!checkable) return { ...c, conflito: null as ReturnType<typeof findCarroConflito> };
+                    const conflito = findCarroConflito(
+                      c.id, dataObj!, formData.horaInicio, formData.horaFim,
+                      compromissos.map(co => ({ id: co.id, carroId: co.carroId, data: co.data, horaInicio: co.horaInicio, horaFim: co.horaFim })),
+                      editingId || undefined
+                    );
+                    return { ...c, conflito };
+                  });
+                  return (
+                    <div className="space-y-1.5 animate-fade-in">
+                      <Label className="text-xs">Qual carro?</Label>
+                      {carros.length === 0 ? (
+                        <p className="text-[11px] text-muted-foreground">Nenhum carro cadastrado. Pede pra um admin adicionar em Perfil → Carros.</p>
+                      ) : (
+                        <Select value={formData.carroId} onValueChange={(v) => setFormData({ ...formData, carroId: v })}>
+                          <SelectTrigger className="h-9 rounded-lg text-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                          <SelectContent>
+                            {carrosComStatus.map(c => (
+                              <SelectItem key={c.id} value={c.id} disabled={!!c.conflito}>
+                                {c.nome}{c.placa ? ` (${c.placa})` : ""}
+                                {c.conflito && <span className="text-destructive text-[10px] ml-2">— ocupado {c.conflito.horaInicio}-{c.conflito.horaFim}</span>}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      {!checkable && carros.length > 0 && (
+                        <p className="text-[11px] text-muted-foreground">Preenche a data + horários pra ver quais estão livres.</p>
+                      )}
+                    </div>
+                  );
+                })()}
                 <div className="flex items-center justify-between py-1">
                   <Label className="text-xs flex items-center gap-1.5"><Monitor className="w-3.5 h-3.5 text-violet-400" /> Vai usar Data Show?</Label>
                   <Switch checked={formData.usarDataShow} onCheckedChange={(v) => setFormData({ ...formData, usarDataShow: v })} />
@@ -635,7 +688,7 @@ const CalendarioTecnico = () => {
                       {selectedEvent.usarCarro ? (
                         <span className="font-medium flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-cyan-400/10 text-cyan-400 text-xs">
                           <Car className="w-3.5 h-3.5" />
-                          {selectedEvent.tipoCarro === "mobi" ? "Mobi" : "Alugado"}
+                          {selectedEvent.carroNome || (selectedEvent.tipoCarro === "mobi" ? "Mobi" : selectedEvent.tipoCarro === "alugado" ? "Alugado" : "—")}
                         </span>
                       ) : (
                         <span className="text-muted-foreground text-xs">Não</span>
