@@ -3,7 +3,6 @@ import { User, Sector } from "@/lib/mock-data";
 import { supabase } from "@/lib/supabase";
 
 const SESSION_KEY = "medwork-session";
-const USER_CACHE_KEY = "medwork_user_v2"; // versioned — invalida cache se shape mudar
 
 interface AuthContextType {
   user: User | null;
@@ -27,37 +26,10 @@ export const useAuth = () => {
   return ctx;
 };
 
-// Helpers defensivos pro localStorage (Safari Privado pode falhar)
-function readUserCache(): User | null {
-  try {
-    const raw = localStorage.getItem(USER_CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (
-      !parsed ||
-      typeof parsed.id !== "string" ||
-      typeof parsed.full_name !== "string" ||
-      typeof parsed.email !== "string"
-    ) return null;
-    return parsed as User;
-  } catch {
-    return null;
-  }
-}
-
-function writeUserCache(user: User | null) {
-  try {
-    if (user) localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
-    else localStorage.removeItem(USER_CACHE_KEY);
-  } catch {}
-}
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  // Restaura user do cache localStorage SÍNCRONO no init — entrada instantânea
-  const cachedUser = readUserCache();
   const [users, setUsers] = useState<User[]>([]);
-  const [user, setUser] = useState<User | null>(cachedUser);
-  const [loading, setLoading] = useState(!cachedUser);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const fetchUsers = useCallback(async () => {
     const { data } = await supabase.from("medwork_users").select("*");
@@ -78,22 +50,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return [];
   }, []);
 
-  // Background refresh: valida sessão e atualiza users sem bloquear render
+  // Load users and restore session on mount
   useEffect(() => {
     const init = async () => {
       const allUsers = await fetchUsers();
       const savedId = localStorage.getItem(SESSION_KEY);
       if (savedId) {
         const found = allUsers.find((u) => u.id === savedId);
-        if (found) {
-          setUser(found);
-          writeUserCache(found);
-        } else {
-          // User não existe mais no banco — limpa
-          setUser(null);
-          writeUserCache(null);
-          localStorage.removeItem(SESSION_KEY);
-        }
+        if (found) setUser(found);
       }
       setLoading(false);
     };
@@ -101,12 +65,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchUsers]);
 
   const login = async (email: string, password: string) => {
+    // Refresh users from Supabase before login attempt
     const freshUsers = await fetchUsers();
     const found = freshUsers.find((u) => u.email === email && u.password === password);
     if (found) {
       setUser(found);
-      writeUserCache(found);
-      try { localStorage.setItem(SESSION_KEY, found.id); } catch {}
+      localStorage.setItem(SESSION_KEY, found.id);
       return true;
     }
     return false;
@@ -114,8 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => {
     setUser(null);
-    writeUserCache(null);
-    try { localStorage.removeItem(SESSION_KEY); } catch {}
+    localStorage.removeItem(SESSION_KEY);
   };
 
   const canAccessSector = (sector: Sector) => {
@@ -132,11 +95,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (data.password !== undefined) updates.password = data.password;
 
     await supabase.from("medwork_users").update(updates).eq("id", user.id);
-    setUser((prev) => {
-      const updated = prev ? { ...prev, ...data } : prev;
-      if (updated) writeUserCache(updated);
-      return updated;
-    });
+    setUser((prev) => prev ? { ...prev, ...data } : prev);
     await fetchUsers();
   };
 
@@ -158,11 +117,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const updateUser = async (id: string, data: Partial<Omit<User, "id">>) => {
     await supabase.from("medwork_users").update(data).eq("id", id);
     if (user && user.id === id) {
-      setUser((prev) => {
-        const updated = prev ? { ...prev, ...data } : prev;
-        if (updated) writeUserCache(updated);
-        return updated;
-      });
+      setUser((prev) => prev ? { ...prev, ...data } : prev);
     }
     await fetchUsers();
   };
