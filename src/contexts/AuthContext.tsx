@@ -26,10 +26,22 @@ export const useAuth = () => {
   return ctx;
 };
 
+const USER_CACHE_KEY = "medwork_user_cache";
+const USERS_CACHE_KEY = "medwork_users_cache";
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Restore from cache SYNCHRONOUSLY to avoid blocking initial render on slow networks
+  const [users, setUsers] = useState<User[]>(() => {
+    try { return JSON.parse(localStorage.getItem(USERS_CACHE_KEY) || "[]"); } catch { return []; }
+  });
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const cached = localStorage.getItem(USER_CACHE_KEY);
+      return cached ? JSON.parse(cached) : null;
+    } catch { return null; }
+  });
+  // Loading false se já temos user em cache (mostra app imediato, refresh em background)
+  const [loading, setLoading] = useState(() => !localStorage.getItem(USER_CACHE_KEY));
 
   const fetchUsers = useCallback(async () => {
     const { data } = await supabase.from("medwork_users").select("*");
@@ -45,19 +57,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         sectors: u.sectors || [],
       }));
       setUsers(mapped);
+      try { localStorage.setItem(USERS_CACHE_KEY, JSON.stringify(mapped)); } catch {}
       return mapped;
     }
     return [];
   }, []);
 
-  // Load users and restore session on mount
+  // Background refresh + valida sessão
   useEffect(() => {
     const init = async () => {
       const allUsers = await fetchUsers();
       const savedId = localStorage.getItem(SESSION_KEY);
       if (savedId) {
         const found = allUsers.find((u) => u.id === savedId);
-        if (found) setUser(found);
+        if (found) {
+          setUser(found);
+          try { localStorage.setItem(USER_CACHE_KEY, JSON.stringify(found)); } catch {}
+        } else {
+          // Usuário não existe mais no banco — limpa cache
+          setUser(null);
+          localStorage.removeItem(USER_CACHE_KEY);
+          localStorage.removeItem(SESSION_KEY);
+        }
       }
       setLoading(false);
     };
@@ -65,12 +86,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchUsers]);
 
   const login = async (email: string, password: string) => {
-    // Refresh users from Supabase before login attempt
     const freshUsers = await fetchUsers();
     const found = freshUsers.find((u) => u.email === email && u.password === password);
     if (found) {
       setUser(found);
       localStorage.setItem(SESSION_KEY, found.id);
+      try { localStorage.setItem(USER_CACHE_KEY, JSON.stringify(found)); } catch {}
       return true;
     }
     return false;
@@ -79,6 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(USER_CACHE_KEY);
   };
 
   const canAccessSector = (sector: Sector) => {
@@ -95,7 +117,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (data.password !== undefined) updates.password = data.password;
 
     await supabase.from("medwork_users").update(updates).eq("id", user.id);
-    setUser((prev) => prev ? { ...prev, ...data } : prev);
+    setUser((prev) => {
+      const updated = prev ? { ...prev, ...data } : prev;
+      if (updated) try { localStorage.setItem(USER_CACHE_KEY, JSON.stringify(updated)); } catch {}
+      return updated;
+    });
     await fetchUsers();
   };
 
