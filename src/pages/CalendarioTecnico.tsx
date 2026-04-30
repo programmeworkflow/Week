@@ -43,6 +43,7 @@ interface Compromisso {
   carroNome?: string;
   usarDataShow: boolean;
   tipo: "treinamento" | "visita" | "reuniao" | "compromisso";
+  sector?: Sector; // origem do compromisso (em modo linked)
   criadoPor: string;
   instrutor?: string;
   empresa?: string;
@@ -63,11 +64,19 @@ const CalendarioTecnico = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [carros, setCarros] = useState<Carro[]>([]);
 
+  // Setores linkados: técnico, psicossocial e saúde compartilham o mesmo calendário
+  // Reservas de carro são cross-sector (se psicossocial reserva, técnico vê e vice-versa)
+  const LINKED_SECTORS: Sector[] = ["tecnico", "psicossocial", "saude"];
+  const isLinkedSector = LINKED_SECTORS.includes(currentSector);
+
   // Load compromissos + carros from Supabase
   useEffect(() => {
     const load = async () => {
+      const compQuery = isLinkedSector
+        ? supabase.from("medwork_compromissos").select("*").in("sector", LINKED_SECTORS)
+        : supabase.from("medwork_compromissos").select("*").eq("sector", currentSector);
       const [compRes, carrosList] = await Promise.all([
-        supabase.from("medwork_compromissos").select("*").eq("sector", currentSector),
+        compQuery,
         fetchCarrosAtivos(),
       ]);
       setCarros(carrosList);
@@ -84,6 +93,7 @@ const CalendarioTecnico = () => {
           carroNome: c.carro_id ? carroMap.get(c.carro_id) : undefined,
           usarDataShow: c.usar_data_show || false,
           tipo: c.tipo || "treinamento",
+          sector: c.sector as Sector | undefined,
           criadoPor: c.criado_por || "",
           instrutor: c.instrutor || "",
           empresa: c.empresa || "",
@@ -348,8 +358,8 @@ const CalendarioTecnico = () => {
                             getTipoColor(ev.tipo)
                           )}
                         />
-                        {isTecnico && ev.usarCarro && <Car className="w-2.5 h-2.5 text-cyan-400" />}
-                        {isTecnico && ev.usarDataShow && <Monitor className="w-2.5 h-2.5 text-violet-400" />}
+                        {isLinkedSector && ev.usarCarro && <Car className="w-2.5 h-2.5 text-cyan-400" />}
+                        {isLinkedSector && ev.usarDataShow && <Monitor className="w-2.5 h-2.5 text-violet-400" />}
                       </div>
                     ))}
                   </div>
@@ -360,7 +370,7 @@ const CalendarioTecnico = () => {
         </div>
         {/* Legend */}
         <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-border">
-          {isTecnico ? (
+          {isLinkedSector ? (
             <>
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-[hsl(var(--status-andamento-text))]" />
@@ -369,6 +379,10 @@ const CalendarioTecnico = () => {
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-orange-500" />
                 <span className="text-[10px] text-muted-foreground">Visita Técnica</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-red-500" />
+                <span className="text-[10px] text-muted-foreground">Reunião</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Car className="w-3 h-3 text-cyan-400" />
@@ -465,8 +479,8 @@ const CalendarioTecnico = () => {
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        {isTecnico && c.usarCarro && <Car className="w-3.5 h-3.5 text-cyan-400" />}
-                        {isTecnico && c.usarDataShow && <Monitor className="w-3.5 h-3.5 text-violet-400" />}
+                        {isLinkedSector && c.usarCarro && <Car className="w-3.5 h-3.5 text-cyan-400" />}
+                        {isLinkedSector && c.usarDataShow && <Monitor className="w-3.5 h-3.5 text-violet-400" />}
                       </div>
                       <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                         <UserIcon className="w-3 h-3" />
@@ -506,12 +520,13 @@ const CalendarioTecnico = () => {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Tipo</Label>
-              {isTecnico ? (
+              {isLinkedSector ? (
                 <Select value={formData.tipo} onValueChange={(v) => setFormData({ ...formData, tipo: v as any })}>
                   <SelectTrigger className="h-9 rounded-lg text-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="treinamento">Treinamento</SelectItem>
                     <SelectItem value="visita">Visita Técnica</SelectItem>
+                    <SelectItem value="reuniao">Reunião</SelectItem>
                   </SelectContent>
                 </Select>
               ) : (
@@ -524,7 +539,7 @@ const CalendarioTecnico = () => {
                 </Select>
               )}
             </div>
-            {isTecnico && (
+            {isLinkedSector && (
               <>
                 <div className="flex items-center justify-between py-1">
                   <Label className="text-xs flex items-center gap-1.5"><Car className="w-3.5 h-3.5 text-cyan-400" /> Vai usar carro?</Label>
@@ -678,8 +693,8 @@ const CalendarioTecnico = () => {
                   <span className="font-medium">{selectedEvent.horaInicio} - {selectedEvent.horaFim}</span>
                 </div>
 
-                {/* Carro and Data Show - only for técnico */}
-                {isTecnico && (
+                {/* Carro and Data Show — Tecnico, Psicossocial, Saúde */}
+                {isLinkedSector && (
                   <>
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground flex items-center gap-1.5">
