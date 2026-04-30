@@ -6,7 +6,8 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, FileCheck, Download, Upload, Filter, X, ArrowDownAZ, ArrowUpZA, Save } from "lucide-react";
+import { Plus, Trash2, FileCheck, Download, Upload, Filter, X, ArrowDownAZ, ArrowUpZA, Save, Pencil, Check } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatCNPJorCPF, formatTelefone, formatDate as fmtDate } from "@/lib/formatters";
 import * as XLSX from "xlsx";
@@ -69,6 +70,10 @@ const Procuracao = () => {
   const [newRow, setNewRow] = useState<Omit<ProcuracaoRow, "id">>({
     empresa: "", cnpj_cpf: "", situacao: "", contrato: "", email: "", telefone: "", procuracao_vencimento: "", contabilidade: "",
   });
+
+  // Modo edição: linha em edição + buffer com mudanças pendentes (só persiste ao clicar Salvar)
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<Partial<ProcuracaoRow>>({});
 
   const [page, setPage] = useState(1);
   const PER_PAGE = 50;
@@ -199,30 +204,43 @@ const Procuracao = () => {
     setAdding(false);
   };
 
-  const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const startEdit = (row: ProcuracaoRow) => {
+    setEditingId(row.id);
+    setEditDraft({ ...row });
+  };
 
-  const updateRow = (id: string, data: Partial<ProcuracaoRow>, immediate = false) => {
-    if (data.procuracao_vencimento) {
-      const current = rows.find(r => r.id === id);
-      if (current?.situacao !== "Aguardando") {
-        const autoSit = getSituacaoFromDate(data.procuracao_vencimento);
-        if (autoSit) data.situacao = autoSit;
-      }
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditDraft({});
+  };
+
+  const saveEdit = async () => {
+    if (!editingId) return;
+    const data = { ...editDraft };
+    // Auto-recalcula situação a partir do vencimento, exceto se estiver "Aguardando"
+    if (data.procuracao_vencimento && data.situacao !== "Aguardando") {
+      const autoSit = getSituacaoFromDate(data.procuracao_vencimento);
+      if (autoSit) data.situacao = autoSit;
     }
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...data } : r)));
-    if (immediate) {
-      // Cancel any pending debounce for this row
-      if (saveTimers.current[id]) clearTimeout(saveTimers.current[id]);
-      supabase.from("medwork_procuracoes").update(data).eq("id", id).then(({ error }) => {
-        if (error) console.error("Save error:", error);
-      });
+    const { id: _drop, ...patch } = data as any;
+    const { error } = await supabase.from("medwork_procuracoes").update(patch).eq("id", editingId);
+    if (error) {
+      toast.error("Erro ao salvar: " + error.message);
       return;
     }
-    // Debounce DB save (500ms)
-    if (saveTimers.current[id]) clearTimeout(saveTimers.current[id]);
-    saveTimers.current[id] = setTimeout(() => {
-      supabase.from("medwork_procuracoes").update(data).eq("id", id);
-    }, 500);
+    setRows((prev) => prev.map((r) => (r.id === editingId ? { ...r, ...data } as ProcuracaoRow : r)));
+    setEditingId(null);
+    setEditDraft({});
+    toast.success("Salvo");
+  };
+
+  // Toggle de "Aguardando" continua imediato (quick action), independente de modo edit
+  const toggleAguardando = async (row: ProcuracaoRow, checked: boolean) => {
+    const newSit = checked ? "Aguardando" : (getSituacaoFromDate(row.procuracao_vencimento) || "");
+    const { error } = await supabase.from("medwork_procuracoes").update({ situacao: newSit }).eq("id", row.id);
+    if (error) { toast.error("Erro ao salvar"); return; }
+    setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, situacao: newSit } : r)));
+    if (editingId === row.id) setEditDraft((d) => ({ ...d, situacao: newSit }));
   };
 
   const deleteRow = async (id: string) => {
@@ -333,54 +351,92 @@ const Procuracao = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredRows.slice((page - 1) * PER_PAGE, page * PER_PAGE).map((r, i) => (
-                <tr key={r.id} className={cn("border-b border-border/50 hover:bg-accent/30 transition-colors", r.situacao === "Aguardando" ? "bg-yellow-100/80 dark:bg-yellow-900/20" : i % 2 === 0 ? "" : "bg-muted/20")}>
+              {filteredRows.slice((page - 1) * PER_PAGE, page * PER_PAGE).map((r, i) => {
+                const isEditing = editingId === r.id;
+                const draft = isEditing ? { ...r, ...editDraft } as ProcuracaoRow : r;
+                const setField = (k: keyof ProcuracaoRow, v: string) => setEditDraft((d) => ({ ...d, [k]: v }));
+                return (
+                <tr key={r.id} className={cn("border-b border-border/50 transition-colors", isEditing ? "bg-primary/5 ring-1 ring-primary/30" : draft.situacao === "Aguardando" ? "bg-yellow-100/80 dark:bg-yellow-900/20" : i % 2 === 0 ? "hover:bg-accent/30" : "bg-muted/20 hover:bg-accent/30")}>
                   <td className="px-2 py-1.5 text-center">
-                    <input type="checkbox" checked={r.situacao === "Aguardando"} onChange={(e) => updateRow(r.id, { situacao: e.target.checked ? "Aguardando" : (getSituacaoFromDate(r.procuracao_vencimento) || "") }, true)} className="w-4 h-4 rounded border-border accent-yellow-500 cursor-pointer" title="Aguardando resposta" />
+                    <input type="checkbox" checked={draft.situacao === "Aguardando"} onChange={(e) => toggleAguardando(r, e.target.checked)} className="w-4 h-4 rounded border-border accent-yellow-500 cursor-pointer" title="Aguardando resposta" />
                   </td>
                   <td className="px-3 py-1.5">
-                    <Input value={r.empresa} onChange={(e) => updateRow(r.id, { empresa: e.target.value })} className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
+                    {isEditing
+                      ? <Input value={draft.empresa} onChange={(e) => setField("empresa", e.target.value)} className="h-7 text-xs rounded-lg" autoFocus />
+                      : <span className="text-xs">{r.empresa}</span>}
                   </td>
                   <td className="px-3 py-1.5">
-                    <Input value={r.cnpj_cpf} onChange={(e) => updateRow(r.id, { cnpj_cpf: formatCNPJorCPF(e.target.value) })} placeholder="CNPJ ou CPF" className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
+                    {isEditing
+                      ? <Input value={draft.cnpj_cpf} onChange={(e) => setField("cnpj_cpf", formatCNPJorCPF(e.target.value))} placeholder="CNPJ ou CPF" className="h-7 text-xs rounded-lg" />
+                      : <span className="text-xs text-muted-foreground">{r.cnpj_cpf}</span>}
                   </td>
                   <td className="px-3 py-1.5">
-                    <Select value={r.situacao || "vazio"} onValueChange={(v) => updateRow(r.id, { situacao: v === "vazio" ? "" : v }, true)}>
-                      <SelectTrigger className={cn("h-7 text-xs rounded-lg border-border/50", getSituacaoColor(r.situacao))}><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="vazio">Em branco</SelectItem>
-                        <SelectItem value="Expirada">Expirada</SelectItem>
-                        <SelectItem value="Ativa">Ativa</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {isEditing ? (
+                      <Select value={draft.situacao || "vazio"} onValueChange={(v) => setField("situacao", v === "vazio" ? "" : v)}>
+                        <SelectTrigger className={cn("h-7 text-xs rounded-lg", getSituacaoColor(draft.situacao))}><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="vazio">Em branco</SelectItem>
+                          <SelectItem value="Expirada">Expirada</SelectItem>
+                          <SelectItem value="Ativa">Ativa</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span className={cn("text-[11px] px-2 py-0.5 rounded-md inline-block", getSituacaoColor(r.situacao))}>{r.situacao || "—"}</span>
+                    )}
                   </td>
                   <td className="px-3 py-1.5">
-                    <Input value={r.contrato} onChange={(e) => updateRow(r.id, { contrato: fmtDate(e.target.value) })} placeholder="dd/mm/aaaa" className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
+                    {isEditing
+                      ? <Input value={draft.contrato} onChange={(e) => setField("contrato", fmtDate(e.target.value))} placeholder="dd/mm/aaaa" className="h-7 text-xs rounded-lg" />
+                      : <span className="text-xs text-muted-foreground">{r.contrato}</span>}
                   </td>
                   <td className="px-3 py-1.5">
-                    <Input type="email" value={r.email} onChange={(e) => updateRow(r.id, { email: e.target.value })} placeholder="email@exemplo.com" className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
+                    {isEditing
+                      ? <Input type="email" value={draft.email} onChange={(e) => setField("email", e.target.value)} placeholder="email@exemplo.com" className="h-7 text-xs rounded-lg" />
+                      : <span className="text-xs text-muted-foreground">{r.email}</span>}
                   </td>
                   <td className="px-3 py-1.5">
-                    <Input value={r.telefone} onChange={(e) => updateRow(r.id, { telefone: formatTelefone(e.target.value) })} placeholder="(00) 00000-0000" className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
+                    {isEditing
+                      ? <Input value={draft.telefone} onChange={(e) => setField("telefone", formatTelefone(e.target.value))} placeholder="(00) 00000-0000" className="h-7 text-xs rounded-lg" />
+                      : <span className="text-xs text-muted-foreground">{r.telefone}</span>}
                   </td>
                   <td className="px-3 py-1.5">
-                    <Input
-                      value={r.procuracao_vencimento}
-                      onChange={(e) => updateRow(r.id, { procuracao_vencimento: fmtDate(e.target.value) })}
-                      placeholder="dd/mm/aaaa"
-                      className={cn("h-7 text-xs rounded-lg border-border/50 font-medium", getProcuracaoColor(r.procuracao_vencimento))}
-                    />
+                    {isEditing ? (
+                      <Input value={draft.procuracao_vencimento} onChange={(e) => setField("procuracao_vencimento", fmtDate(e.target.value))} placeholder="dd/mm/aaaa" className={cn("h-7 text-xs rounded-lg font-medium", getProcuracaoColor(draft.procuracao_vencimento))} />
+                    ) : (
+                      <span className={cn("text-xs px-2 py-0.5 rounded-md inline-block font-medium", getProcuracaoColor(r.procuracao_vencimento))}>{r.procuracao_vencimento || "—"}</span>
+                    )}
                   </td>
                   <td className="px-3 py-1.5">
-                    <Input value={r.contabilidade} onChange={(e) => updateRow(r.id, { contabilidade: e.target.value })} className="h-7 text-xs rounded-lg border-border/50 bg-transparent hover:bg-background focus:bg-background" />
+                    {isEditing
+                      ? <Input value={draft.contabilidade} onChange={(e) => setField("contabilidade", e.target.value)} className="h-7 text-xs rounded-lg" />
+                      : <span className="text-xs text-muted-foreground">{r.contabilidade}</span>}
                   </td>
                   <td className="px-3 py-1.5 text-center">
-                    <Button variant="ghost" size="icon" onClick={() => deleteRow(r.id)} className="h-6 w-6 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10">
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
+                    <div className="flex gap-1 justify-center">
+                      {isEditing ? (
+                        <>
+                          <Button variant="default" size="icon" onClick={saveEdit} className="h-6 w-6 rounded-lg bg-primary text-primary-foreground" title="Salvar">
+                            <Check className="w-3 h-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={cancelEdit} className="h-6 w-6 rounded-lg" title="Cancelar">
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button variant="ghost" size="icon" onClick={() => startEdit(r)} className="h-6 w-6 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10" title="Editar">
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => deleteRow(r.id)} className="h-6 w-6 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10" title="Excluir">
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
               {adding && (
                 <tr className="border-b border-primary/20 bg-primary/5">
                   <td className="px-2 py-1.5 text-center">
