@@ -16,9 +16,16 @@ interface CompromissoConflito {
   horaFim: string;
 }
 
+// "YYYY-MM-DD" sem hora vira UTC midnight em new Date — em UTC-3 fica no dia anterior.
+// Anexar T12:00:00 garante meio-dia local em qualquer fuso.
+const toLocalDate = (v: Date | string): Date => {
+  if (typeof v !== "string") return v;
+  return new Date(/^\d{4}-\d{2}-\d{2}$/.test(v) ? v + "T12:00:00" : v);
+};
+
 const sameDay = (a: Date | string, b: Date | string): boolean => {
-  const da = typeof a === "string" ? new Date(a) : a;
-  const db = typeof b === "string" ? new Date(b) : b;
+  const da = toLocalDate(a);
+  const db = toLocalDate(b);
   return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate();
 };
 

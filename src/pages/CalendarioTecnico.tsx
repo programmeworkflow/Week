@@ -84,7 +84,7 @@ const CalendarioTecnico = () => {
       if (compRes.data) {
         setCompromissos(compRes.data.map((c: any) => ({
           id: c.id,
-          data: new Date(c.data),
+          data: new Date(c.data + "T12:00:00"),
           horaInicio: c.hora_inicio || "",
           horaFim: c.hora_fim || "",
           usarCarro: c.usar_carro || false,

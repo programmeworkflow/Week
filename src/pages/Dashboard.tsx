@@ -1061,7 +1061,7 @@ const Dashboard = () => {
               },
               {
                 label: "Atrasados",
-                value: projects.filter(p => p.due_date && new Date(p.due_date) < new Date() && p.status !== "done" && p.status !== "archived").length,
+                value: projects.filter(p => p.due_date && new Date(p.due_date + "T12:00:00") < new Date() && p.status !== "done" && p.status !== "archived").length,
                 color: "text-red-400",
               },
               {

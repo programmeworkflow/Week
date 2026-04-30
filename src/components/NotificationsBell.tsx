@@ -67,7 +67,7 @@ export const NotificationsBell = ({ collapsed }: { collapsed?: boolean }) => {
     for (const p of transferred) {
       if (existingProjectIds.has(p.id)) continue;
       const isResponsible = (p.responsible_ids || []).includes(user.id);
-      const due = p.due_date ? new Date(p.due_date) : null;
+      const due = p.due_date ? new Date(p.due_date + "T12:00:00") : null;
       const days = due ? Math.ceil((due.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 999;
       const urgent = days <= 3;
       const fromSector = (p as any).from_sector || "outro setor";

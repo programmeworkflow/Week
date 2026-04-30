@@ -17,7 +17,7 @@ interface KanbanCardProps {
 export const KanbanCard = ({ project, users, index, locked, onCardClick, renderExtra }: KanbanCardProps) => {
   const navigate = useNavigate();
   const responsibles = users.filter((u) => project.responsible_ids.includes(u.id));
-  const isOverdue = new Date(project.due_date) < new Date() && project.status !== "done";
+  const isOverdue = new Date(project.due_date + "T12:00:00") < new Date() && project.status !== "done";
 
   const touchRef = useRef<{ startX: number; startY: number; el: HTMLElement | null; clone: HTMLElement | null; dragging: boolean }>({
     startX: 0, startY: 0, el: null, clone: null, dragging: false,
@@ -142,7 +142,7 @@ export const KanbanCard = ({ project, users, index, locked, onCardClick, renderE
       <div className="flex items-center justify-between mt-auto">
         <div className={`flex items-center gap-1.5 text-xs ${isOverdue ? "text-destructive" : "text-muted-foreground"}`}>
           <Calendar className="w-3.5 h-3.5 stroke-[1.5]" />
-          <span>{format(new Date(project.due_date), "dd MMM", { locale: ptBR })}</span>
+          <span>{format(new Date(project.due_date + "T12:00:00"), "dd MMM", { locale: ptBR })}</span>
         </div>
         <div className="flex -space-x-1.5">
           {responsibles.slice(0, 3).map((u) => (

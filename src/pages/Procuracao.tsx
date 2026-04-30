@@ -27,7 +27,7 @@ const getSituacaoFromDate = (dateStr: string): string => {
   if (!dateStr) return "";
   const parts = dateStr.split("/");
   if (parts.length !== 3) return "";
-  const venc = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+  const venc = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T12:00:00`);
   if (isNaN(venc.getTime())) return "";
   const now = new Date();
   now.setHours(0, 0, 0, 0);
@@ -39,7 +39,7 @@ const getDaysToExpire = (dateStr: string): number | null => {
   if (!dateStr) return null;
   const parts = dateStr.split("/");
   if (parts.length !== 3) return null;
-  const venc = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+  const venc = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T12:00:00`);
   if (isNaN(venc.getTime())) return null;
   const now = new Date();
   now.setHours(0, 0, 0, 0);

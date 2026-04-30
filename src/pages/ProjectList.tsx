@@ -705,7 +705,7 @@ const DefaultProjectList = ({ sector, comercialStatusLabels, comercialStatusColo
                 </div>
               </td>
               <td className="px-4 py-3 text-xs text-muted-foreground">{format(new Date(p.created_at), "dd/MM/yyyy")}</td>
-              <td className="px-4 py-3 text-xs text-muted-foreground">{format(new Date(p.due_date), "dd/MM/yyyy")}</td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">{format(new Date(p.due_date + "T12:00:00"), "dd/MM/yyyy")}</td>
               {isFinanceiro && (
                 <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                   {p.status === "archived" && (
