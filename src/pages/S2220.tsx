@@ -126,7 +126,7 @@ const S2220 = () => {
   const addItem = async (tipo: "verificacao" | "erro", conteudo: string) => {
     if (!conteudo.trim()) return;
     const item: S2220Item = {
-      id: String(Date.now()),
+      id: crypto.randomUUID(),
       mes: selectedMes,
       ano: selectedAno,
       tipo,

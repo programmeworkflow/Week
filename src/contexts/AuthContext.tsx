@@ -100,7 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addUser = async (userData: Omit<User, "id">) => {
-    const newId = String(Date.now());
+    const newId = crypto.randomUUID();
     await supabase.from("medwork_users").insert({
       id: newId,
       full_name: userData.full_name,

@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { UserPlus, Shield } from "lucide-react";
 import { Sector, SECTORS, User } from "@/lib/mock-data";
 import { formatCPF } from "@/lib/formatters";
+import { toast } from "sonner";
 
 interface AddMemberModalProps {
   editingUser?: User | null;
@@ -53,24 +54,29 @@ export const AddMemberModal = ({ editingUser, onClose }: AddMemberModalProps) =>
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.sectors.length === 0) return;
+    const fullName = form.full_name.trim();
+    const email = form.email.trim();
+    if (!fullName) { toast.error("Informe o nome completo"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error("E-mail inválido"); return; }
+    if (!isEditing && form.password.length < 6) { toast.error("Senha precisa de pelo menos 6 caracteres"); return; }
+    if (!form.is_admin && form.sectors.length === 0) { toast.error("Selecione ao menos um setor"); return; }
 
     if (isEditing && editingUser) {
       updateUser(editingUser.id, {
-        full_name: form.full_name,
+        full_name: fullName,
         cpf: form.cpf,
-        email: form.email,
+        email,
         password: form.password,
         sectors: form.sectors,
         is_admin: form.is_admin,
       });
     } else {
       addUser({
-        full_name: form.full_name,
+        full_name: fullName,
         cpf: form.cpf,
-        email: form.email,
+        email,
         password: form.password,
-        sectors: form.is_admin ? ["diretoria", "tecnico", "comercial", "saude", "financeiro"] : form.sectors,
+        sectors: form.is_admin ? ["diretoria", "tecnico", "comercial", "saude", "financeiro", "psicossocial", "esocial"] : form.sectors,
         is_admin: form.is_admin,
         company_id: "1",
       });

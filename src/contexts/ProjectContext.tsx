@@ -87,7 +87,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
   // --- Projects ---
   const addProject = async (project: Omit<Project, "id" | "created_at">) => {
-    const id = String(Date.now());
+    const id = crypto.randomUUID();
     const created_at = new Date().toISOString();
     const newProject = { ...project, id, created_at };
     setProjects((prev) => [...prev, newProject as Project]);
@@ -137,7 +137,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
   // --- Messages ---
   const addMessage = async (msg: Omit<ProjectMessage, "id" | "criado_em">) => {
-    const id = String(Date.now());
+    const id = crypto.randomUUID();
     const criado_em = new Date().toISOString();
     const newMsg = { ...msg, id, criado_em };
     setMessages((prev) => {
@@ -157,7 +157,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
   // --- Tecnico Projects ---
   const addTecnicoProject = async (project: Omit<TecnicoProject, "id">) => {
-    const id = String(Date.now());
+    const id = crypto.randomUUID();
     const newProject = { ...project, id };
     setTecnicoProjects((prev) => [...prev, newProject as TecnicoProject]);
     await supabase.from("medwork_tecnico_projects").insert(newProject);
@@ -175,7 +175,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
   // --- Attachments (local only for now, stored in project objects) ---
   const addProjectAttachment = (projectId: string, attachment: Omit<ProjectAttachment, "id">) => {
-    const newAttachment = { ...attachment, id: String(Date.now()) };
+    const newAttachment = { ...attachment, id: crypto.randomUUID() };
     setProjects((prev) => prev.map((p) => p.id === projectId ? { ...p, attachments: [...(p.attachments || []), newAttachment] } : p));
   };
 
@@ -184,7 +184,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addTecnicoAttachment = (projectId: string, attachment: Omit<ProjectAttachment, "id">) => {
-    const newAttachment = { ...attachment, id: String(Date.now()) };
+    const newAttachment = { ...attachment, id: crypto.randomUUID() };
     setTecnicoProjects((prev) => prev.map((p) => p.id === projectId ? { ...p, attachments: [...(p.attachments || []), newAttachment] } : p));
   };
 
@@ -193,7 +193,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addMessageAttachment = async (msg: Omit<ProjectMessage, "id" | "criado_em">) => {
-    const id = String(Date.now());
+    const id = crypto.randomUUID();
     const criado_em = new Date().toISOString();
     const newMsg = { ...msg, id, criado_em };
     setMessages((prev) => {
@@ -205,7 +205,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
   // --- Kanban Variáveis ---
   const addKanbanVariavelCard = async (card: Omit<KanbanVariavelCard, "id">) => {
-    const id = String(Date.now());
+    const id = crypto.randomUUID();
     const newCard = { ...card, id };
     setKanbanVariavelCards((prev) => [...prev, newCard as KanbanVariavelCard]);
     await supabase.from("medwork_kanban_variavel").insert({
@@ -238,7 +238,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
   // --- Renovação ---
   const addRenovacaoCard = async (card: Omit<RenovacaoCard, "id">) => {
-    const id = String(Date.now());
+    const id = crypto.randomUUID();
     const newCard = { ...card, id };
     setRenovacaoCards((prev) => [...prev, newCard as RenovacaoCard]);
     await supabase.from("medwork_renovacao").insert({
@@ -270,7 +270,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
   // --- Treinamento Rows ---
   const addTreinamentoRow = async (row: Omit<{ id: string; grupo: string; treinamento: string; data: string; aluno: string; instrutor: string }, "id">) => {
-    const id = String(Date.now());
+    const id = crypto.randomUUID();
     const newRow = { ...row, id };
     setTreinamentoRows((prev) => [...prev, newRow]);
     await supabase.from("medwork_treinamento_rows").insert(newRow);
@@ -322,7 +322,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     await supabase.from("medwork_projects").insert(newProject);
 
     const sectorLabel = ({ tecnico: "Setor Técnico", comercial: "Comercial", saude: "Saúde", financeiro: "Financeiro", diretoria: "Diretoria" } as Record<string, string>)[newSector] || newSector;
-    const msgId = String(Date.now());
+    const msgId = crypto.randomUUID();
     const msg = {
       id: msgId,
       projeto_id: tp.id,

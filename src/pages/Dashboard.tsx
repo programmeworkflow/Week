@@ -309,7 +309,7 @@ const TreinamentoTable = ({ grupo }: { grupo: string }) => {
       if (parts.length === 3) {
         const isoDate = `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
         await supabase.from("medwork_compromissos").insert({
-          id: String(Date.now()),
+          id: crypto.randomUUID(),
           sector: "tecnico",
           data: isoDate,
           hora_inicio: "A confirmar",
@@ -626,7 +626,7 @@ const Dashboard = () => {
         .maybeSingle();
       if (existing) return false;
       const { error } = await supabase.from("medwork_premiacao").insert({
-        id: String(Date.now()),
+        id: crypto.randomUUID(),
         user_name: recipientName,
         user_id: recipientId,
         project_name: projectName,
@@ -852,7 +852,7 @@ const Dashboard = () => {
   // Chat handlers for técnico
   const handleTecnicoChatSend = () => {
     if (!editingTecnico || (!tecnicoChatInput.trim() && tecnicoChatAttachments.length === 0) || !user) return;
-    const attachments = tecnicoChatAttachments.map((a, i) => ({ ...a, id: String(Date.now() + i) }));
+    const attachments = tecnicoChatAttachments.map((a, i) => ({ ...a, id: crypto.randomUUID() }));
     addMessage({
       projeto_id: editingTecnico.id,
       usuario_id: user.id || "1",
@@ -872,7 +872,7 @@ const Dashboard = () => {
       recorder.onstop = () => {
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         const url = URL.createObjectURL(blob);
-        setAudioMessages(prev => [...prev, { id: String(Date.now()), userId: user?.id || "1", url, timestamp: new Date().toISOString() }]);
+        setAudioMessages(prev => [...prev, { id: crypto.randomUUID(), userId: user?.id || "1", url, timestamp: new Date().toISOString() }]);
         stream.getTracks().forEach(t => t.stop());
       };
       recorder.start();

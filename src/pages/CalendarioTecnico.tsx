@@ -425,13 +425,13 @@ const CalendarioTecnico = () => {
               <p className="text-sm text-muted-foreground mt-0.5">Gerencie treinamentos e visitas técnicas</p>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg btn-3d neon-hover" onClick={() => setBaseMonth((m) => subMonths(m, 1))}>
+              <Button variant="outline" size="icon" aria-label="Mês anterior" className="h-8 w-8 rounded-lg btn-3d neon-hover" onClick={() => setBaseMonth((m) => subMonths(m, 1))}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <Button variant="outline" size="sm" className="h-8 rounded-lg text-xs btn-3d neon-hover" onClick={() => setBaseMonth(new Date())}>
                 Hoje
               </Button>
-              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg btn-3d neon-hover" onClick={() => setBaseMonth((m) => addMonths(m, 1))}>
+              <Button variant="outline" size="icon" aria-label="Próximo mês" className="h-8 w-8 rounded-lg btn-3d neon-hover" onClick={() => setBaseMonth((m) => addMonths(m, 1))}>
                 <ChevronRight className="w-4 h-4" />
               </Button>
               <Button onClick={openCreate} className="h-8 rounded-lg text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 btn-3d neon-hover animate-float">

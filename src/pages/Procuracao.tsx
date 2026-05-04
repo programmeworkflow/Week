@@ -168,7 +168,7 @@ const Procuracao = () => {
         const venc = r["Procuração (Vencimento)"] || r["Procuração"] || r["Procuracao"] || r["Vencimento"] || "";
         const sit = venc ? getSituacaoFromDate(venc) : (r["Situação"] || r["Situacao"] || "");
         return {
-          id: String(Date.now() + i),
+          id: crypto.randomUUID(),
           empresa: r["Empresa"] || "",
           cnpj_cpf: r["CNPJ/CPF"] || r["CNPJ"] || r["CPF"] || "",
           situacao: sit || "",
@@ -195,7 +195,7 @@ const Procuracao = () => {
 
   const addRow = async () => {
     if (!newRow.empresa) return;
-    const id = String(Date.now());
+    const id = crypto.randomUUID();
     const autoSit = newRow.situacao === "Aguardando" ? "Aguardando" : (newRow.procuracao_vencimento ? getSituacaoFromDate(newRow.procuracao_vencimento) : newRow.situacao);
     const row = { ...newRow, id, situacao: autoSit || newRow.situacao };
     setRows((prev) => [...prev, row]);
