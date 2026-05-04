@@ -481,21 +481,31 @@ const Dashboard = () => {
 
     filtered = [...filtered].sort((a, b) => (PRIORITY_ORDER[a.prioridade] ?? 99) - (PRIORITY_ORDER[b.prioridade] ?? 99));
 
-    return filtered.map(tp => ({
-      id: tp.id,
-      company_id: "1",
-      project_name: tp.empresa,
-      description: `${tp.responsavel} • ${tp.regiao}`,
-      cnpj: tp.cnpj,
-      due_date: tp.data ? (() => {
-        const parts = tp.data.split("/");
-        return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : "2026-12-31";
-      })() : "2026-12-31",
-      status: statusMap[tp.status_tecnico] || "not_started",
-      sector: "tecnico" as Sector,
-      responsible_ids: [],
-      created_at: new Date().toISOString(),
-    }));
+    return filtered.map(tp => {
+      // Parse tp.data (dd/mm/yyyy) to ISO. Strict regex: only 8 valid digits accepted.
+      // Anything malformed (incomplete like "12/05/", non-numeric, rolled-over dates) → empty.
+      let isoDue = "";
+      const m = tp.data && /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(tp.data);
+      if (m) {
+        const [, d, mo, y] = m;
+        const test = new Date(Number(y), Number(mo) - 1, Number(d));
+        if (test.getFullYear() === Number(y) && test.getMonth() === Number(mo) - 1 && test.getDate() === Number(d)) {
+          isoDue = `${y}-${mo}-${d}`;
+        }
+      }
+      return {
+        id: tp.id,
+        company_id: "1",
+        project_name: tp.empresa,
+        description: `${tp.responsavel || ""} • ${tp.regiao || ""}`,
+        cnpj: tp.cnpj,
+        due_date: isoDue,
+        status: statusMap[tp.status_tecnico] || "not_started",
+        sector: "tecnico" as Sector,
+        responsible_ids: [],
+        created_at: new Date().toISOString(),
+      };
+    });
   };
 
   // Kanban Variáveis → Project format for display

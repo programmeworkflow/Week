@@ -81,25 +81,33 @@ const CalendarioTecnico = () => {
       setCarros(carrosList);
       const carroMap = new Map(carrosList.map(c => [c.id, c.nome]));
       if (compRes.data) {
-        setCompromissos(compRes.data.map((c: any) => ({
-          id: c.id,
-          data: new Date(c.data + "T12:00:00"),
-          horaInicio: c.hora_inicio || "",
-          horaFim: c.hora_fim || "",
-          usarCarro: c.usar_carro || false,
-          tipoCarro: c.tipo_carro || undefined,
-          carroId: c.carro_id || null,
-          carroNome: c.carro_id ? carroMap.get(c.carro_id) : undefined,
-          usarDataShow: c.usar_data_show || false,
-          tipo: c.tipo || "treinamento",
-          sector: c.sector as Sector | undefined,
-          criadoPor: c.criado_por || "",
-          instrutor: c.instrutor || "",
-          empresa: c.empresa || "",
-          localizacao: c.localizacao || "",
-          observacoes: c.observacoes || "",
-          responsavel: c.responsavel || "",
-        })));
+        // Discard records with invalid/missing data — passes Invalid Date to format() crashes the calendar
+        const valid = compRes.data
+          .map((c: any) => {
+            const d = c.data ? new Date(c.data + "T12:00:00") : null;
+            if (!d || isNaN(d.getTime())) return null;
+            return {
+              id: c.id,
+              data: d,
+              horaInicio: c.hora_inicio || "",
+              horaFim: c.hora_fim || "",
+              usarCarro: c.usar_carro || false,
+              tipoCarro: c.tipo_carro || undefined,
+              carroId: c.carro_id || null,
+              carroNome: c.carro_id ? carroMap.get(c.carro_id) : undefined,
+              usarDataShow: c.usar_data_show || false,
+              tipo: c.tipo || "treinamento",
+              sector: c.sector as Sector | undefined,
+              criadoPor: c.criado_por || "",
+              instrutor: c.instrutor || "",
+              empresa: c.empresa || "",
+              localizacao: c.localizacao || "",
+              observacoes: c.observacoes || "",
+              responsavel: c.responsavel || "",
+            };
+          })
+          .filter(Boolean) as any[];
+        setCompromissos(valid);
       }
     };
     load();

@@ -13,7 +13,7 @@ import { format } from "date-fns";
 import { Project, Sector, TecnicoProject, TECNICO_RESPONSAVEIS, TECNICO_PRIORIDADES, TECNICO_STATUS_OPTIONS } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { getSectorTitle } from "@/lib/sectors";
-import { formatTelefone, formatDate as fmtDate3, formatCNPJ as fmtCNPJ3 } from "@/lib/formatters";
+import { formatTelefone, formatDate as fmtDate3, formatCNPJ as fmtCNPJ3, parseISODate } from "@/lib/formatters";
 import { ImportSpreadsheetModal } from "@/components/ImportSpreadsheetModal";
 import { Plus, Trash2, Save, Edit2, Eye, Filter, X, Download, RefreshCw, MessageCircle } from "lucide-react";
 import * as XLSX from "xlsx";
@@ -704,8 +704,8 @@ const DefaultProjectList = ({ sector, comercialStatusLabels, comercialStatusColo
                   ))}
                 </div>
               </td>
-              <td className="px-4 py-3 text-xs text-muted-foreground">{format(new Date(p.created_at), "dd/MM/yyyy")}</td>
-              <td className="px-4 py-3 text-xs text-muted-foreground">{format(new Date(p.due_date + "T12:00:00"), "dd/MM/yyyy")}</td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">{p.created_at && !isNaN(new Date(p.created_at).getTime()) ? format(new Date(p.created_at), "dd/MM/yyyy") : "—"}</td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">{(() => { const d = parseISODate(p.due_date); return d ? format(d, "dd/MM/yyyy") : "—"; })()}</td>
               {isFinanceiro && (
                 <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                   {p.status === "archived" && (

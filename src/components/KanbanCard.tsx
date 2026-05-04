@@ -4,6 +4,7 @@ import { Project, User } from "@/lib/mock-data";
 import { Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { parseISODate } from "@/lib/formatters";
 
 interface KanbanCardProps {
   project: Project;
@@ -17,7 +18,8 @@ interface KanbanCardProps {
 export const KanbanCard = ({ project, users, index, locked, onCardClick, renderExtra }: KanbanCardProps) => {
   const navigate = useNavigate();
   const responsibles = users.filter((u) => project.responsible_ids.includes(u.id));
-  const isOverdue = new Date(project.due_date + "T12:00:00") < new Date() && project.status !== "done";
+  const dueDate = parseISODate(project.due_date);
+  const isOverdue = dueDate ? dueDate < new Date() && project.status !== "done" : false;
 
   const touchRef = useRef<{ startX: number; startY: number; el: HTMLElement | null; clone: HTMLElement | null; dragging: boolean }>({
     startX: 0, startY: 0, el: null, clone: null, dragging: false,
@@ -142,7 +144,7 @@ export const KanbanCard = ({ project, users, index, locked, onCardClick, renderE
       <div className="flex items-center justify-between mt-auto">
         <div className={`flex items-center gap-1.5 text-xs ${isOverdue ? "text-destructive" : "text-muted-foreground"}`}>
           <Calendar className="w-3.5 h-3.5 stroke-[1.5]" />
-          <span>{format(new Date(project.due_date + "T12:00:00"), "dd MMM", { locale: ptBR })}</span>
+          <span>{dueDate ? format(dueDate, "dd MMM", { locale: ptBR }) : "—"}</span>
         </div>
         <div className="flex -space-x-1.5">
           {responsibles.slice(0, 3).map((u) => (

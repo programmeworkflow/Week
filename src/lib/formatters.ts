@@ -44,3 +44,29 @@ export const formatCNPJorCPF = (value: string): string => {
 export const isValidEmail = (value: string): boolean => {
   return value.includes("@");
 };
+
+// Parse ISO date (YYYY-MM-DD) to a Date at noon local time. Returns null if invalid.
+// Use this for any due_date/start_date stored in ISO format before passing to format().
+export const parseISODate = (iso: string | null | undefined): Date | null => {
+  if (!iso || typeof iso !== "string") return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return null;
+  const [, y, mo, d] = m;
+  const date = new Date(Number(y), Number(mo) - 1, Number(d), 12, 0, 0);
+  if (isNaN(date.getTime())) return null;
+  // Reject dates that JS silently rolled over (e.g. "2026-02-30")
+  if (date.getFullYear() !== Number(y) || date.getMonth() !== Number(mo) - 1 || date.getDate() !== Number(d)) return null;
+  return date;
+};
+
+// Parse BR date (dd/mm/yyyy) to a Date at noon local time. Returns null if invalid.
+export const parseBRDate = (br: string | null | undefined): Date | null => {
+  if (!br || typeof br !== "string") return null;
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(br);
+  if (!m) return null;
+  const [, d, mo, y] = m;
+  const date = new Date(Number(y), Number(mo) - 1, Number(d), 12, 0, 0);
+  if (isNaN(date.getTime())) return null;
+  if (date.getFullYear() !== Number(y) || date.getMonth() !== Number(mo) - 1 || date.getDate() !== Number(d)) return null;
+  return date;
+};

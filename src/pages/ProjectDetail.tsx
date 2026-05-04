@@ -17,7 +17,7 @@ import { ArrowLeft, Trash2, Send, Edit2, Copy, Mic, Square, Play, Pause, ArrowRi
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Project, SECTORS, Sector, ProjectAttachment, TecnicoProject, KanbanVariavelCard, TECNICO_RESPONSAVEIS, TECNICO_PRIORIDADES, TECNICO_STATUS_OPTIONS } from "@/lib/mock-data";
-import { formatTelefone, formatCNPJ as fmtCNPJ2, formatDate as fmtDate2 } from "@/lib/formatters";
+import { formatTelefone, formatCNPJ as fmtCNPJ2, formatDate as fmtDate2, parseISODate } from "@/lib/formatters";
 import { TransferSectorModal } from "@/components/TransferSectorModal";
 import { AchievementToast } from "@/components/AchievementToast";
 import { FileAttachmentButton, FileAttachmentList } from "@/components/FileAttachment";
@@ -804,8 +804,8 @@ const ProjectDetail = () => {
                       {p.cnpj && <div><span className="text-xs font-medium text-muted-foreground">CNPJ</span><p className="text-sm text-foreground">{p.cnpj}</p></div>}
                       <div><span className="text-xs font-medium text-muted-foreground">Setor</span><p className="text-sm text-foreground">{SECTORS.find(s => s.id === p.sector)?.label}</p></div>
                       <div className="grid grid-cols-2 gap-4">
-                        <div><span className="text-xs font-medium text-muted-foreground">Data de Início</span><p className="text-sm text-foreground">{p.start_date ? format(new Date(p.start_date + "T12:00:00"), "dd/MM/yyyy") : "—"}</p></div>
-                        <div><span className="text-xs font-medium text-muted-foreground">Data Limite</span><p className="text-sm text-foreground">{format(new Date(p.due_date + "T12:00:00"), "dd/MM/yyyy")}</p></div>
+                        <div><span className="text-xs font-medium text-muted-foreground">Data de Início</span><p className="text-sm text-foreground">{(() => { const d = parseISODate(p.start_date); return d ? format(d, "dd/MM/yyyy") : "—"; })()}</p></div>
+                        <div><span className="text-xs font-medium text-muted-foreground">Data Limite</span><p className="text-sm text-foreground">{(() => { const d = parseISODate(p.due_date); return d ? format(d, "dd/MM/yyyy") : "—"; })()}</p></div>
                       </div>
                       <div>
                         <span className="text-xs font-medium text-muted-foreground">Responsáveis</span>
