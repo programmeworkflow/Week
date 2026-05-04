@@ -2,8 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Typography pairing: Fraunces (display, editorial-medical authority) + Geist (body, technical clarity) */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400..700,30..100&family=Geist:wght@300;400;500;600;700&display=swap');
+/* Typography pairing: Fraunces (display, editorial-medical authority) + Geist (body, technical clarity) + JetBrains Mono (instrumental tags) */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400..700,30..100&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @layer base {
   :root {
@@ -213,6 +213,80 @@
     letter-spacing: -0.025em;
     font-weight: 500;
   }
+
+  /* Eyebrow label — uppercase monospace tag for section headers.
+     Evokes instrument panels / clinical readouts. */
+  .eyebrow {
+    font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+  .eyebrow-accent {
+    font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: hsl(var(--primary));
+  }
+
+  /* Fade-out divider — replaces flat border lines with one that breathes. */
+  .divider-fade {
+    height: 1px;
+    background: linear-gradient(to right,
+      hsl(var(--border)) 0%,
+      hsl(var(--border)) 40%,
+      transparent 100%);
+  }
+  .dark .divider-fade {
+    background: linear-gradient(to right,
+      hsl(var(--primary) / 0.5) 0%,
+      hsl(var(--border)) 30%,
+      transparent 100%);
+  }
+
+  /* Cockpit background — millimeter-paper grid, very low contrast.
+     Apply on <main> elements where you want the panel-instrument feel. */
+  .cockpit-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.35) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.35) 1px, transparent 1px);
+    background-size: 56px 56px;
+    background-position: 0 0;
+  }
+  .dark .cockpit-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--primary) / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--primary) / 0.06) 1px, transparent 1px);
+  }
+
+  /* Status-feixe: 3px luminous left bar on Kanban cards */
+  .feixe-not_authenticated { box-shadow: inset 3px 0 0 hsl(var(--status-critico-text)); }
+  .feixe-not_started       { box-shadow: inset 3px 0 0 hsl(var(--status-nao-iniciado-text)); }
+  .feixe-pending           { box-shadow: inset 3px 0 0 hsl(var(--status-andamento-text)); }
+  .feixe-doc_pending       { box-shadow: inset 3px 0 0 hsl(var(--status-pendente-text)); }
+  .feixe-review            { box-shadow: inset 3px 0 0 hsl(var(--status-revisao-text)); }
+  .feixe-done              { box-shadow: inset 3px 0 0 hsl(var(--status-concluido-text)); }
+  .feixe-archived          { box-shadow: inset 3px 0 0 hsl(var(--muted-foreground) / 0.4); }
+  .dark .feixe-not_authenticated { box-shadow: inset 3px 0 0 hsl(var(--status-critico-text)), 0 0 18px hsl(var(--status-critico-text) / 0.18); }
+  .dark .feixe-not_started       { box-shadow: inset 3px 0 0 hsl(var(--status-nao-iniciado-text)), 0 0 18px hsl(var(--status-nao-iniciado-text) / 0.18); }
+  .dark .feixe-pending           { box-shadow: inset 3px 0 0 hsl(var(--status-andamento-text)), 0 0 18px hsl(var(--status-andamento-text) / 0.18); }
+  .dark .feixe-doc_pending       { box-shadow: inset 3px 0 0 hsl(var(--status-pendente-text)), 0 0 18px hsl(var(--status-pendente-text) / 0.18); }
+  .dark .feixe-review            { box-shadow: inset 3px 0 0 hsl(var(--status-revisao-text)), 0 0 18px hsl(var(--status-revisao-text) / 0.18); }
+  .dark .feixe-done              { box-shadow: inset 3px 0 0 hsl(var(--status-concluido-text)), 0 0 18px hsl(var(--status-concluido-text) / 0.18); }
+
+  /* Refined scrollbar — instrument feel */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 999px;
+    border: 2px solid hsl(var(--background));
+  }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary) / 0.5); }
 
   .shadow-card {
     box-shadow: var(--shadow-sm);

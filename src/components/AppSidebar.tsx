@@ -124,16 +124,16 @@ export const AppSidebar = () => {
         "max-md:w-60",
         mobileOpen ? "max-md:translate-x-0" : "max-md:-translate-x-full"
       )}>
-        {/* Logo */}
-        <div className={cn("px-4 py-4 flex items-center border-b border-border", collapsed ? "flex-col gap-2 px-2" : "justify-between")}>
-          <Link to="/dashboard/projects" className={cn("flex items-center gap-2.5", collapsed && "justify-center")}>
-            <div className={cn("rounded-[10px] overflow-hidden", collapsed ? "w-9 h-9" : "w-12 h-12")}>
+        {/* Logo + wordmark (cockpit header) */}
+        <div className={cn("px-4 py-4 flex items-center relative", collapsed ? "flex-col gap-2 px-2" : "justify-between")}>
+          <Link to="/dashboard/projects" className={cn("flex items-center gap-3", collapsed && "justify-center")}>
+            <div className={cn("rounded-[10px] overflow-hidden ring-1 ring-border/60 dark:ring-primary/20", collapsed ? "w-9 h-9" : "w-11 h-11")}>
               <img src="/week-icon-512.png" alt="Week" className="w-full h-full object-contain" />
             </div>
             {!collapsed && (
-              <div>
-                <span className="font-semibold text-foreground text-[13px]">Week MedWork</span>
-                <span className="block text-[10px] text-muted-foreground leading-none">Medicina e Segurança</span>
+              <div className="flex flex-col leading-none">
+                <span className="font-display text-foreground text-[22px] tracking-[-0.03em] font-medium leading-none">Week</span>
+                <span className="eyebrow-accent mt-1.5 text-[9px]">MedWork</span>
               </div>
             )}
           </Link>
@@ -144,6 +144,8 @@ export const AppSidebar = () => {
             {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
           </button>
         </div>
+        {!collapsed && <div className="divider-fade mx-4" />}
+        {collapsed && <div className="border-b border-border" />}
 
         {/* Top nav */}
         <nav className="px-3 pt-3 space-y-1">

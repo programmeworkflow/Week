@@ -1011,10 +1011,15 @@ const Dashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
-      <main className="flex-1 ml-60 sidebar-collapsed:ml-16 p-6 md:p-8 bg-background transition-all duration-200">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8 animate-fade-in">
-          <h1 className="font-display text-[22px] leading-tight font-medium text-foreground neon-text">{boardTitle}</h1>
+      <main className="flex-1 ml-60 sidebar-collapsed:ml-16 p-6 md:p-8 bg-background cockpit-grid transition-all duration-200">
+        {/* Header — cockpit-style: eyebrow tag + display title + fade divider */}
+        <div className="flex items-start justify-between mb-6 animate-fade-in">
+          <div className="flex flex-col gap-1.5">
+            <span className="eyebrow-accent">
+              {isGeneralDashboard ? "// Painel Geral" : `// Setor · ${(sector || "").toUpperCase()}`}
+            </span>
+            <h1 className="font-display text-[28px] leading-[1.05] font-medium text-foreground neon-text tracking-[-0.025em]">{boardTitle}</h1>
+          </div>
           {!isGeneralDashboard && (
             <div className="flex items-center gap-2">
               {isTecnico ? (
@@ -1053,6 +1058,7 @@ const Dashboard = () => {
             </div>
           )}
         </div>
+        <div className="divider-fade mb-7 animate-fade-in" />
 
         {isGeneralDashboard && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 animate-fade-in">

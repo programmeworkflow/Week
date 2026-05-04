@@ -134,15 +134,15 @@ export const KanbanCard = ({ project, users, index, locked, onCardClick, renderE
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onClick={handleClick}
-      className={`bg-card rounded-[12px] p-[12px] shadow-card hover:shadow-elevated hover:-translate-y-[3px] transition-all duration-300 border border-border animate-fade-in group min-h-[90px] gradient-hover neon-hover ${locked ? "cursor-default" : "cursor-grab active:cursor-grabbing"} touch-manipulation`}
+      className={`bg-card rounded-[10px] pl-[14px] pr-[12px] py-[11px] shadow-card hover:shadow-elevated hover:-translate-y-[3px] transition-all duration-300 border border-border animate-fade-in group min-h-[90px] gradient-hover neon-hover feixe-${project.status} ${locked ? "cursor-default" : "cursor-grab active:cursor-grabbing"} touch-manipulation`}
       style={{ animationDelay: `${index * 30}ms` }}
     >
-      <h4 className="font-medium text-foreground text-[13px] mb-1 group-hover:text-primary transition-colors line-clamp-2">{project.project_name}</h4>
+      <h4 className="font-display text-foreground text-[15px] leading-[1.2] tracking-[-0.015em] font-medium mb-1.5 group-hover:text-primary transition-colors line-clamp-2">{project.project_name}</h4>
       {truncatedDesc && (
-        <p className="text-xs text-muted-foreground mb-3 line-clamp-2 leading-relaxed">{truncatedDesc}</p>
+        <p className="text-[11.5px] text-muted-foreground mb-3 line-clamp-2 leading-relaxed">{truncatedDesc}</p>
       )}
       <div className="flex items-center justify-between mt-auto">
-        <div className={`flex items-center gap-1.5 text-xs ${isOverdue ? "text-destructive" : "text-muted-foreground"}`}>
+        <div className={`flex items-center gap-1.5 text-[11px] font-medium tracking-wide ${isOverdue ? "text-destructive" : "text-muted-foreground"}`}>
           <Calendar className="w-3.5 h-3.5 stroke-[1.5]" />
           <span>{dueDate ? format(dueDate, "dd MMM", { locale: ptBR }) : "—"}</span>
         </div>
