@@ -4,7 +4,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { LayoutDashboard, User, LogOut, List, ChevronDown, ChevronRight, Stethoscope, Briefcase, Heart, DollarSign, Crown, Lock, PanelLeftClose, PanelLeft, Menu, Calendar, Sun, Moon, Archive, Brain, Trophy, FileCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SECTORS, Sector } from "@/lib/mock-data";
-import medworkLogo from "@/assets/medwork-logo.png";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { NotificationsBell } from "./NotificationsBell";
 
@@ -129,7 +128,7 @@ export const AppSidebar = () => {
         <div className={cn("px-4 py-4 flex items-center border-b border-border", collapsed ? "flex-col gap-2 px-2" : "justify-between")}>
           <Link to="/dashboard/projects" className={cn("flex items-center gap-2.5", collapsed && "justify-center")}>
             <div className={cn("rounded-[10px] overflow-hidden", collapsed ? "w-9 h-9" : "w-12 h-12")}>
-              <img src={medworkLogo} alt="MedWork" className="w-full h-full object-contain" />
+              <img src="/week-icon-512.png" alt="Week" className="w-full h-full object-contain" />
             </div>
             {!collapsed && (
               <div>

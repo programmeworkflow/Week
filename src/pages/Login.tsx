@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, Lock, Sparkles, ArrowRight, Shield } from "lucide-react";
-import medworkLogo from "@/assets/medwork-logo.png";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -52,11 +51,17 @@ const Login = () => {
       </div>
 
       <div className="w-full max-w-[420px] animate-fade-in relative z-10">
-        {/* Logo floating above card */}
-        <div className="flex justify-center mb-6">
+        {/* Logo + wordmark, floating above card */}
+        <div className="flex flex-col items-center mb-6">
           <div className="relative animate-float">
-            <img src={medworkLogo} alt="MedWork" className="h-28 object-contain relative z-10 drop-shadow-[0_0_20px_hsl(var(--primary)/0.4)]" />
+            <img src="/week-icon-512.png" alt="Week" className="h-24 w-24 object-contain relative z-10 drop-shadow-[0_0_20px_hsl(var(--primary)/0.45)]" />
             <div className="absolute inset-0 bg-primary/25 blur-3xl rounded-full scale-150" />
+          </div>
+          <div className="mt-3 flex flex-col items-center">
+            <h1 className="font-display text-[44px] leading-[0.95] font-medium tracking-[-0.04em] text-foreground neon-text">
+              Week
+            </h1>
+            <span className="mt-1 text-[10px] uppercase tracking-[0.32em] text-muted-foreground">MedWork</span>
           </div>
         </div>
 
