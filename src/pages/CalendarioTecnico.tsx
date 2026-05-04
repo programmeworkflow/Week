@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { supabase } from "@/lib/supabase";
 import { isGoogleConnected, initGoogleAuth, disconnectGoogle, createGoogleEvent, updateGoogleEvent, deleteGoogleEvent, getGoogleEmail } from "@/lib/googleCalendar";
@@ -27,7 +27,6 @@ import {
   addMonths,
   subMonths,
   isSameMonth,
-  isSameDay,
   isToday,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -293,9 +292,24 @@ const CalendarioTecnico = () => {
   };
 
   // Render 4 months: previous, current, next, next+1
-  const months = [subMonths(baseMonth, 1), baseMonth, addMonths(baseMonth, 1), addMonths(baseMonth, 2)];
+  const months = useMemo(
+    () => [subMonths(baseMonth, 1), baseMonth, addMonths(baseMonth, 1), addMonths(baseMonth, 2)],
+    [baseMonth],
+  );
 
-  const getEventsForDay = (day: Date) => compromissos.filter((c) => isSameDay(c.data, day));
+  // Index de eventos por dia (yyyy-MM-dd) — evita filter() N vezes em cada render de célula
+  const eventsByDay = useMemo(() => {
+    const map = new Map<string, Compromisso[]>();
+    for (const c of compromissos) {
+      const key = format(c.data, "yyyy-MM-dd");
+      const arr = map.get(key) || [];
+      arr.push(c);
+      map.set(key, arr);
+    }
+    return map;
+  }, [compromissos]);
+
+  const getEventsForDay = (day: Date) => eventsByDay.get(format(day, "yyyy-MM-dd")) || [];
 
   const getTipoColor = (tipo: string) => {
     if (tipo === "reuniao") return "bg-red-500";

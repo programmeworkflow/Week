@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
@@ -95,7 +95,7 @@ const Procuracao = () => {
   const hasFilters = fEmpresa || fCnpj || fSituacao !== "all" || fContrato || fEmail || fTelefone || fProcuracao || fContabilidade;
   const clearFilters = () => { setFEmpresa(""); setFCnpj(""); setFSituacao("all"); setFContrato(""); setFEmail(""); setFTelefone(""); setFProcuracao(""); setFContabilidade(""); setPage(1); };
 
-  const filteredRows = rows.filter(r => {
+  const filteredRows = useMemo(() => rows.filter(r => {
     if (fEmpresa && !(r.empresa || "").toLowerCase().includes(fEmpresa.toLowerCase())) return false;
     if (fCnpj && !(r.cnpj_cpf || "").toLowerCase().includes(fCnpj.toLowerCase())) return false;
     if (fSituacao !== "all" && (r.situacao || "") !== (fSituacao === "vazio" ? "" : fSituacao)) return false;
@@ -115,7 +115,7 @@ const Procuracao = () => {
       if (sortDate === "za") return db.localeCompare(da);
     }
     return 0;
-  });
+  }), [rows, fEmpresa, fCnpj, fSituacao, fContrato, fEmail, fTelefone, fProcuracao, fContabilidade, sortOrder, sortDate]);
 
   useEffect(() => {
     const load = async () => {

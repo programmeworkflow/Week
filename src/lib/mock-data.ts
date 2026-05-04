@@ -126,13 +126,6 @@ export interface RenovacaoCard {
   createdAt?: string;
 }
 
-export const mockUsers: User[] = [
-  { id: "1", full_name: "Arthur Fogolin", cpf: "000.000.000-00", email: "admin@medwork.com", password: "admin123", is_admin: true, company_id: "1", sectors: ["diretoria", "tecnico", "comercial", "saude", "financeiro"] },
-  { id: "2", full_name: "Carlos Mendes", cpf: "987.654.321-00", email: "carlos@medwork.com", password: "123456", is_admin: false, company_id: "1", sectors: ["tecnico"] },
-  { id: "3", full_name: "Beatriz Costa", cpf: "456.789.123-00", email: "beatriz@medwork.com", password: "123456", is_admin: false, company_id: "1", sectors: ["saude"] },
-  { id: "4", full_name: "Diego Ferreira", cpf: "321.654.987-00", email: "diego@medwork.com", password: "123456", is_admin: false, company_id: "1", sectors: ["comercial"] },
-];
-
 export const mockProjects: Project[] = [
   { id: "1", company_id: "1", project_name: "PPRA - Empresa ABC", description: "Programa de prevenção de riscos ambientais", due_date: "2026-04-15", status: "not_started", sector: "tecnico", responsible_ids: ["1", "2"], created_at: "2026-03-01", start_date: "2026-03-05" },
   { id: "2", company_id: "1", project_name: "ASO - Colaboradores XYZ", description: "Atestados de saúde ocupacional", due_date: "2026-05-01", status: "not_authenticated", sector: "saude", responsible_ids: ["3"], created_at: "2026-03-10" },
