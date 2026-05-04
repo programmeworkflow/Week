@@ -2,7 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* Typography pairing: Fraunces (display, editorial-medical authority) + Geist (body, technical clarity) */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400..700,30..100&family=Geist:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -164,13 +165,55 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Geist', 'Inter', system-ui, sans-serif;
+    font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    position: relative;
   }
+
+  /* Subtle paper-grain texture — gives the interface a tactile, printed-document feel
+     without distracting from content. Runs once at the document root. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  .dark body::before { opacity: 0.04; }
 }
 
 @layer utilities {
+  /* Editorial-medical display: Fraunces is opsz-variable (size-aware) and SOFT-axis tunable.
+     Slight optical size bump + tight tracking + soft axis = warm, authoritative, tactile. */
+  .font-display {
+    font-family: 'Fraunces', 'Iowan Old Style', 'Georgia', serif;
+    font-optical-sizing: auto;
+    font-variation-settings: "opsz" 96, "SOFT" 50;
+    letter-spacing: -0.02em;
+    font-feature-settings: "ss01", "ss02";
+  }
+  .font-display-italic {
+    font-family: 'Fraunces', 'Iowan Old Style', 'Georgia', serif;
+    font-style: italic;
+    font-variation-settings: "opsz" 96, "SOFT" 80;
+    letter-spacing: -0.015em;
+  }
+
+  /* Display-styled headings within main content areas (page titles only).
+     Targets the standard <h1> page-header pattern across the app. */
+  main > div > h1,
+  main > div > div > h1 {
+    font-family: 'Fraunces', 'Iowan Old Style', 'Georgia', serif;
+    font-optical-sizing: auto;
+    font-variation-settings: "opsz" 96, "SOFT" 50;
+    letter-spacing: -0.025em;
+    font-weight: 500;
+  }
+
   .shadow-card {
     box-shadow: var(--shadow-sm);
   }

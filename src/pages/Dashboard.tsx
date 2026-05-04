@@ -1014,7 +1014,7 @@ const Dashboard = () => {
       <main className="flex-1 ml-60 sidebar-collapsed:ml-16 p-6 md:p-8 bg-background transition-all duration-200">
         {/* Header */}
         <div className="flex items-center justify-between mb-8 animate-fade-in">
-          <h1 className="text-lg font-semibold text-foreground neon-text">{boardTitle}</h1>
+          <h1 className="font-display text-[22px] leading-tight font-medium text-foreground neon-text">{boardTitle}</h1>
           {!isGeneralDashboard && (
             <div className="flex items-center gap-2">
               {isTecnico ? (

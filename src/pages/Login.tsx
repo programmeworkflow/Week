@@ -72,10 +72,10 @@ const Login = () => {
                 <Shield className="w-3.5 h-3.5 text-primary" />
                 <span className="text-[11px] font-medium text-primary">Acesso Seguro</span>
               </div>
-              <h2 className="text-2xl font-bold text-foreground neon-text">
-                Bem-vindo de volta
+              <h2 className="font-display text-[28px] leading-[1.1] font-medium text-foreground neon-text">
+                Bem-vindo <span className="font-display-italic text-primary">de volta</span>
               </h2>
-              <p className="text-sm text-muted-foreground mt-2">Entre com suas credenciais para continuar</p>
+              <p className="text-sm text-muted-foreground mt-2.5">Entre com suas credenciais para continuar</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
