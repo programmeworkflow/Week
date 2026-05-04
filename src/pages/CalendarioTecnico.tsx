@@ -107,6 +107,8 @@ const CalendarioTecnico = () => {
   }, [currentSector]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<Compromisso | null>(null);
+  // Quando o dia tem 2+ compromissos, abre uma lista pra escolher qual ver
+  const [dayEvents, setDayEvents] = useState<{ date: Date; events: Compromisso[] } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const isTecnico = currentSector === "tecnico";
@@ -337,7 +339,8 @@ const CalendarioTecnico = () => {
               <button
                 key={i}
                 onClick={() => {
-                  if (events.length > 0) setSelectedEvent(events[0]);
+                  if (events.length === 1) setSelectedEvent(events[0]);
+                  else if (events.length > 1) setDayEvents({ date: day, events });
                 }}
                 className={cn(
                   "relative h-14 text-xs rounded-xl transition-all duration-200",
@@ -669,6 +672,51 @@ const CalendarioTecnico = () => {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Day Events List (quando dia tem 2+ eventos) */}
+      <Dialog open={!!dayEvents} onOpenChange={(open) => { if (!open) setDayEvents(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          {dayEvents && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-base">
+                  <CalendarIcon className="w-4 h-4 text-primary" />
+                  {format(dayEvents.date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                </DialogTitle>
+                <p className="text-xs text-muted-foreground mt-1">{dayEvents.events.length} compromissos neste dia</p>
+              </DialogHeader>
+              <div className="space-y-2 pt-2">
+                {dayEvents.events
+                  .sort((a, b) => (a.horaInicio || "").localeCompare(b.horaInicio || ""))
+                  .map((ev) => (
+                    <button
+                      key={ev.id}
+                      onClick={() => { setSelectedEvent(ev); setDayEvents(null); }}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/40 hover:bg-accent/50 transition-all text-left"
+                    >
+                      <span className={cn("w-3 h-3 rounded-full flex-shrink-0", getTipoColor(ev.tipo))} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-foreground">{getTipoLabel(ev.tipo)}</span>
+                          <span className="text-[11px] text-muted-foreground">{ev.horaInicio} - {ev.horaFim}</span>
+                        </div>
+                        {ev.empresa && <p className="text-[11px] text-muted-foreground truncate mt-0.5">{ev.empresa}</p>}
+                        <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                          <UserIcon className="w-2.5 h-2.5" />
+                          {ev.criadoPor}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {isLinkedSector && ev.usarCarro && <Car className="w-3.5 h-3.5 text-cyan-400" />}
+                        {isLinkedSector && ev.usarDataShow && <Monitor className="w-3.5 h-3.5 text-violet-400" />}
+                      </div>
+                    </button>
+                  ))}
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 

@@ -401,7 +401,7 @@ const TecnicoSpreadsheet = () => {
                   <td className="px-3 py-2">
                     <Select value={p.responsavel} onValueChange={(v) => updateTecnicoProject(p.id, { responsavel: v as any })}>
                       <SelectTrigger className="h-8 text-xs rounded-lg border-border/50"><SelectValue /></SelectTrigger>
-                      <SelectContent>{TECNICO_RESPONSAVEIS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                      <SelectContent>{[...users.filter(u => u.sectors?.includes("tecnico" as any)).map(u => u.full_name), "Zona de espera"].map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                     </Select>
                   </td>
                   <td className="px-3 py-2">
@@ -462,7 +462,7 @@ const TecnicoSpreadsheet = () => {
                   <td className="px-3 py-2">
                     <Select value={newRow.responsavel} onValueChange={(v) => setNewRow({ ...newRow, responsavel: v as any })}>
                       <SelectTrigger className="h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
-                      <SelectContent>{TECNICO_RESPONSAVEIS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                      <SelectContent>{[...users.filter(u => u.sectors?.includes("tecnico" as any)).map(u => u.full_name), "Zona de espera"].map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                     </Select>
                   </td>
                   <td className="px-3 py-2">
