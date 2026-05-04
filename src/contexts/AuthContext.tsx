@@ -32,14 +32,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchUsers = useCallback(async () => {
-    const { data } = await supabase.from("medwork_users").select("*");
+    // Não inclui `password` — nunca expõe credenciais na listagem geral
+    const { data } = await supabase
+      .from("medwork_users")
+      .select("id, full_name, cpf, email, is_admin, company_id, sectors");
     if (data) {
       const mapped: User[] = data.map((u: any) => ({
         id: u.id,
         full_name: u.full_name,
         cpf: u.cpf || "",
         email: u.email,
-        password: u.password,
         is_admin: u.is_admin || false,
         company_id: u.company_id || "1",
         sectors: u.sectors || [],
@@ -65,15 +67,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchUsers]);
 
   const login = async (email: string, password: string) => {
-    // Refresh users from Supabase before login attempt
-    const freshUsers = await fetchUsers();
-    const found = freshUsers.find((u) => u.email === email && u.password === password);
-    if (found) {
-      setUser(found);
-      localStorage.setItem(SESSION_KEY, found.id);
-      return true;
-    }
-    return false;
+    // Query específica do login (inclui password só pra comparar) — não vai pro estado público
+    const { data } = await supabase
+      .from("medwork_users")
+      .select("id, full_name, cpf, email, password, is_admin, company_id, sectors")
+      .eq("email", email)
+      .maybeSingle();
+    if (!data || data.password !== password) return false;
+    const safeUser: User = {
+      id: data.id,
+      full_name: data.full_name,
+      cpf: data.cpf || "",
+      email: data.email,
+      is_admin: data.is_admin || false,
+      company_id: data.company_id || "1",
+      sectors: data.sectors || [],
+    };
+    setUser(safeUser);
+    // Garante que o user logado existe na lista pública
+    setUsers((prev) => prev.some((u) => u.id === safeUser.id) ? prev : [...prev, safeUser]);
+    localStorage.setItem(SESSION_KEY, safeUser.id);
+    return true;
   };
 
   const logout = () => {

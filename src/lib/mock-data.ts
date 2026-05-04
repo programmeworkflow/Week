@@ -15,7 +15,9 @@ export interface User {
   full_name: string;
   cpf: string;
   email: string;
-  password: string;
+  // Password é opcional: nunca é incluído na listagem pública (allUsers).
+  // Só é populado em writes (Profile/AddMember) e na query específica de login.
+  password?: string;
   is_admin: boolean;
   company_id: string;
   sectors: Sector[];
