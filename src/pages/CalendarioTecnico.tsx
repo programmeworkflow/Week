@@ -343,7 +343,7 @@ const CalendarioTecnico = () => {
                   else if (events.length > 1) setDayEvents({ date: day, events });
                 }}
                 className={cn(
-                  "relative h-14 text-xs rounded-xl transition-all duration-200",
+                  "relative h-14 max-md:h-16 text-xs rounded-xl transition-all duration-200",
                   inMonth ? "text-foreground hover:bg-muted" : "text-muted-foreground/30",
                   isToday(day) && !events.length && "bg-primary/10 font-semibold text-primary",
                   events.length > 0 && "cursor-pointer ring-2 ring-primary/50 bg-primary/15 font-bold text-primary dark:shadow-[0_0_12px_rgba(34,197,94,0.3)]",
@@ -419,12 +419,12 @@ const CalendarioTecnico = () => {
       <main className="ml-60 sidebar-collapsed:ml-16 max-md:ml-0 transition-all duration-200">
         <div className="p-6 max-md:p-4 max-md:pt-16">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-start justify-between mb-6 gap-3 max-md:flex-col">
             <div>
               <h1 className="text-xl font-semibold text-foreground neon-text">Calendário — {getSectorTitle(currentSector)}</h1>
               <p className="text-sm text-muted-foreground mt-0.5">Gerencie treinamentos e visitas técnicas</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap max-md:w-full">
               <Button variant="outline" size="icon" aria-label="Mês anterior" className="h-8 w-8 rounded-lg btn-3d neon-hover" onClick={() => setBaseMonth((m) => subMonths(m, 1))}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>

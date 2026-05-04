@@ -231,7 +231,7 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
               maxLength={500}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 max-md:grid-cols-1 gap-3">
             <div className="space-y-2">
               <Label>CNPJ</Label>
               <Input
@@ -257,7 +257,7 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
           {isTecnico && (
             <div className="space-y-2 animate-fade-in">
               <Label>Tipo de Quadro</Label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 max-md:grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setQuadroTipo("fixo")}
@@ -391,7 +391,7 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 max-md:grid-cols-1 gap-3">
             <div className="space-y-2">
               <Label>{isTecnico && quadroTipo === "variavel" ? "Data" : "Data de Início"}</Label>
               <Input type="date" value={form.start_date} onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))} />
@@ -424,7 +424,7 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
           {/* Contact fields */}
           <hr className="border-border" />
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados de Contato</p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 max-md:grid-cols-1 gap-3">
             <div className="space-y-2">
               <Label>Nome do Contato</Label>
               <Input
@@ -475,7 +475,7 @@ export const NewProjectModal = ({ defaultSector }: NewProjectModalProps) => {
                 <p className="text-[11px] text-muted-foreground">
                   Cria um compromisso na aba Calendário usando a Data Limite acima. Útil quando a demanda exige deslocamento.
                 </p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 max-md:grid-cols-1 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs">Hora início</Label>
                     <Input type="time" value={agenda.horaInicio} onChange={(e) => setAgenda({ ...agenda, horaInicio: e.target.value })} className="h-9 text-sm" />
