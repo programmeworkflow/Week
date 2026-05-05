@@ -166,7 +166,7 @@ const formatDateInput = (value: string): string => {
 
 // Paginated Kanban Column wrapper with "Ver mais" / "Ver menos" / "Ver tudo" (modal)
 const PaginatedKanbanColumn = ({
-  col, projects, users, onDrop, locked, onCardClick, extraClass, maxCards, renderCardExtra, onViewAll,
+  col, projects, users, onDrop, locked, onCardClick, extraClass, maxCards, renderCardExtra, onViewAll, onTitleSave,
 }: {
   col: { title: string; status: Project["status"] };
   projects: Project[];
@@ -178,6 +178,7 @@ const PaginatedKanbanColumn = ({
   maxCards: number;
   renderCardExtra?: (project: Project) => React.ReactNode;
   onViewAll?: (col: { title: string; status: Project["status"] }, projects: Project[]) => void;
+  onTitleSave?: (newTitle: string) => Promise<{ updatedProjects: number }>;
 }) => {
   const [expanded, setExpanded] = useState(false);
   const total = projects.length;
@@ -196,6 +197,7 @@ const PaginatedKanbanColumn = ({
         locked={locked}
         onCardClick={locked ? () => {} : onCardClick}
         renderCardExtra={renderCardExtra}
+        onTitleSave={onTitleSave}
       />
       {hasMore && (
         <div className="mt-2 flex gap-1 justify-center">
@@ -405,6 +407,7 @@ const Dashboard = () => {
     kanbanVariavelCards, addKanbanVariavelCard, updateKanbanVariavelCard, updateKanbanVariavelStatus, deleteKanbanVariavelCard,
     renovacaoCards, addRenovacaoCard, updateRenovacaoStatus,
     addMessage, getProjectMessages, addTecnicoAttachment, removeTecnicoAttachment,
+    tecnicoColumnTitles, updateTecnicoColumnTitle,
   } = useProjects();
   const { user, canAccessSector } = useAuth();
   const [filter, setFilter] = useState("all");
@@ -465,14 +468,22 @@ const Dashboard = () => {
   }
 
   const getTecnicoKanbanProjects = (): Project[] => {
+    // Mapa híbrido: títulos legados + título atual editado de cada coluna.
+    // Garante que projetos antigos com status_tecnico "Não iniciadas" caiam na mesma coluna
+    // que projetos novos com o título customizado pelo usuário.
     const statusMap: Record<string, Project["status"]> = {
       "Não cadastradas no ESO": "not_authenticated",
       "Não iniciadas": "not_started",
+      "Zona de espera": "not_started",
       "Visita pendente": "pending",
       "Documentação pendente": "doc_pending",
       "Revisão": "review",
       "Finalizada": "done",
+      "Finalizadas": "done",
     };
+    Object.entries(tecnicoColumnTitles).forEach(([statusKey, title]) => {
+      statusMap[title] = statusKey as Project["status"];
+    });
 
     let filtered = tecnicoProjects.filter(tp => tp.status_tecnico !== "Arquivado");
     if (tecnicoResponsavelFilter !== "all") {
@@ -596,8 +607,15 @@ const Dashboard = () => {
     }
   }, [sector, projects.length]);
 
+  // Para o Técnico, os títulos das colunas vêm do contexto (editáveis pelo usuário).
+  // Mantém os mesmos status enums + posições do tecnicoColumns hardcoded.
+  const dynamicTecnicoColumns = tecnicoColumns.map((c) => ({
+    ...c,
+    title: tecnicoColumnTitles[c.status] || c.title,
+  }));
+
   const getColumnsForSector = () => {
-    if (isTecnico) return tecnicoColumns;
+    if (isTecnico) return dynamicTecnicoColumns;
     if (isPsicossocial) return psicossocialColumns;
     if (isComercial) return treinamentoColumns;
     if (isDiretoria) return diretoriaColumns;
@@ -682,13 +700,15 @@ const Dashboard = () => {
   };
 
   const handleTecnicoDrop = async (projectId: string, newStatus: Project["status"]) => {
+    // Usa o título atual editável da coluna como string canônica do status_tecnico.
+    // Fallback pros defaults legados se a coluna não estiver mapeada.
     const reverseStatusMap: Record<Project["status"], string> = {
-      not_authenticated: "Não cadastradas no ESO",
-      not_started: "Não iniciadas",
-      pending: "Visita pendente",
-      doc_pending: "Documentação pendente",
-      review: "Revisão",
-      done: "Finalizada",
+      not_authenticated: tecnicoColumnTitles.not_authenticated || "Não cadastradas no ESO",
+      not_started: tecnicoColumnTitles.not_started || "Não iniciadas",
+      pending: tecnicoColumnTitles.pending || "Visita pendente",
+      doc_pending: tecnicoColumnTitles.doc_pending || "Documentação pendente",
+      review: tecnicoColumnTitles.review || "Revisão",
+      done: tecnicoColumnTitles.done || "Finalizada",
     };
     if (newStatus === "done") {
       const tp = tecnicoProjects.find(t => t.id === projectId);
@@ -1297,6 +1317,7 @@ const Dashboard = () => {
                     extraClass={isTecnico ? tecnicoColumnColors[col.status] || "" : ""}
                     maxCards={MAX_CARDS_FIXOS}
                     onViewAll={handleViewAll}
+                    onTitleSave={isTecnico && !isGeneralDashboard ? (newTitle) => updateTecnicoColumnTitle(col.status, newTitle) : undefined}
                     renderCardExtra={isTecnico ? (project) => (
                       <div className="flex gap-1 mt-1">
                         <Button

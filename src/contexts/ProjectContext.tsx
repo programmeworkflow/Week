@@ -3,12 +3,24 @@ import { Project, User, ProjectMessage, ProjectAttachment, Sector, TecnicoProjec
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
+// Titles editáveis das colunas do Kanban Técnico. status_key fixo, title editável pelo usuário.
+export const DEFAULT_TECNICO_COLUMN_TITLES: Record<string, string> = {
+  not_authenticated: "Não cadastradas no ESO",
+  not_started: "Zona de espera",
+  pending: "Visita pendente",
+  doc_pending: "Documentação pendente",
+  review: "Revisão",
+  done: "Finalizadas",
+};
+
 interface ProjectContextType {
   projects: Project[];
   users: User[];
   messages: ProjectMessage[];
   tecnicoProjects: TecnicoProject[];
   kanbanVariavelCards: KanbanVariavelCard[];
+  tecnicoColumnTitles: Record<string, string>;
+  updateTecnicoColumnTitle: (statusKey: string, newTitle: string) => Promise<{ updatedProjects: number }>;
   addProject: (project: Omit<Project, "id" | "created_at">) => void;
   updateProject: (id: string, data: Partial<Omit<Project, "id">>) => void;
   updateProjectStatus: (id: string, status: Project["status"]) => void;
@@ -65,6 +77,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   const [kanbanVariavelCards, setKanbanVariavelCards] = useState<KanbanVariavelCard[]>([]);
   const [renovacaoCards, setRenovacaoCards] = useState<RenovacaoCard[]>([]);
   const [treinamentoRows, setTreinamentoRows] = useState<{ id: string; grupo: string; treinamento: string; data: string; aluno: string; instrutor: string }[]>([]);
+  const [tecnicoColumnTitles, setTecnicoColumnTitles] = useState<Record<string, string>>(DEFAULT_TECNICO_COLUMN_TITLES);
 
   // Fetch all data from Supabase on mount
   useEffect(() => {
@@ -81,9 +94,59 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       if (renRes.data) setRenovacaoCards(renRes.data.map((r: any) => ({ ...r, createdAt: r.created_at || "" })));
       const treiRes = await supabase.from("medwork_treinamento_rows").select("*");
       if (treiRes.data) setTreinamentoRows(treiRes.data);
+
+      // Tabela de títulos do Kanban técnico — falha silenciosa se não existir
+      const { data: colsData, error: colsErr } = await supabase.from("medwork_tecnico_columns").select("status_key, title");
+      if (!colsErr && colsData && colsData.length > 0) {
+        const map: Record<string, string> = { ...DEFAULT_TECNICO_COLUMN_TITLES };
+        colsData.forEach((c: any) => { if (c.status_key && c.title) map[c.status_key] = c.title; });
+        setTecnicoColumnTitles(map);
+      }
     };
     load();
   }, []);
+
+  const updateTecnicoColumnTitle = async (statusKey: string, newTitle: string): Promise<{ updatedProjects: number }> => {
+    const trimmed = newTitle.trim();
+    const oldTitle = tecnicoColumnTitles[statusKey];
+    if (!trimmed || trimmed === oldTitle) return { updatedProjects: 0 };
+
+    // 1) Persiste o novo título
+    await supabase.from("medwork_tecnico_columns").upsert({
+      status_key: statusKey,
+      title: trimmed,
+    }, { onConflict: "status_key" });
+
+    // 2) Atualiza em cascata os projetos cujo status_tecnico era o título antigo
+    //    (cobre tanto o título atual quanto o default — ex: "Não iniciadas" legado para coluna not_started "Zona de espera")
+    const candidates = new Set<string>();
+    if (oldTitle) candidates.add(oldTitle);
+    const def = DEFAULT_TECNICO_COLUMN_TITLES[statusKey];
+    if (def) candidates.add(def);
+    // Pares legados conhecidos
+    if (statusKey === "not_started") candidates.add("Não iniciadas");
+    if (statusKey === "done") { candidates.add("Finalizada"); candidates.add("Finalizadas"); }
+    candidates.delete(trimmed);
+
+    let updatedProjects = 0;
+    if (candidates.size > 0) {
+      const arr = Array.from(candidates);
+      const matching = tecnicoProjects.filter((tp) => arr.includes(tp.status_tecnico as any));
+      updatedProjects = matching.length;
+      if (matching.length > 0) {
+        await supabase
+          .from("medwork_tecnico_projects")
+          .update({ status_tecnico: trimmed })
+          .in("status_tecnico", arr);
+        setTecnicoProjects((prev) => prev.map((tp) =>
+          arr.includes(tp.status_tecnico as any) ? { ...tp, status_tecnico: trimmed as any } : tp
+        ));
+      }
+    }
+
+    setTecnicoColumnTitles((prev) => ({ ...prev, [statusKey]: trimmed }));
+    return { updatedProjects };
+  };
 
   // --- Projects ---
   const addProject = async (project: Omit<Project, "id" | "created_at">) => {
@@ -354,6 +417,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       renovacaoCards, addRenovacaoCard, updateRenovacaoCard, deleteRenovacaoCard, updateRenovacaoStatus,
       treinamentoRows, addTreinamentoRow, updateTreinamentoRow, deleteTreinamentoRow,
       transferTecnicoToSector,
+      tecnicoColumnTitles, updateTecnicoColumnTitle,
     }}>
       {children}
     </ProjectContext.Provider>
