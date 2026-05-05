@@ -2,8 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Typography pairing: Fraunces (display, editorial-medical authority) + Geist (body, technical clarity) + JetBrains Mono (instrumental tags) */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400..700,30..100&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -165,8 +164,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Geist', 'Inter', system-ui, sans-serif;
-    font-feature-settings: "ss01", "cv11";
+    font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     position: relative;
@@ -187,37 +185,19 @@
 }
 
 @layer utilities {
-  /* Editorial-medical display: Fraunces is opsz-variable (size-aware) and SOFT-axis tunable.
-     Slight optical size bump + tight tracking + soft axis = warm, authoritative, tactile. */
   .font-display {
-    font-family: 'Fraunces', 'Iowan Old Style', 'Georgia', serif;
-    font-optical-sizing: auto;
-    font-variation-settings: "opsz" 96, "SOFT" 50;
+    font-family: 'Inter', sans-serif;
     letter-spacing: -0.02em;
-    font-feature-settings: "ss01", "ss02";
   }
   .font-display-italic {
-    font-family: 'Fraunces', 'Iowan Old Style', 'Georgia', serif;
+    font-family: 'Inter', sans-serif;
     font-style: italic;
-    font-variation-settings: "opsz" 96, "SOFT" 80;
     letter-spacing: -0.015em;
   }
 
-  /* Display-styled headings within main content areas (page titles only).
-     Targets the standard <h1> page-header pattern across the app. */
-  main > div > h1,
-  main > div > div > h1 {
-    font-family: 'Fraunces', 'Iowan Old Style', 'Georgia', serif;
-    font-optical-sizing: auto;
-    font-variation-settings: "opsz" 96, "SOFT" 50;
-    letter-spacing: -0.025em;
-    font-weight: 500;
-  }
-
-  /* Eyebrow label — uppercase monospace tag for section headers.
-     Evokes instrument panels / clinical readouts. */
+  /* Eyebrow label — uppercase tag for section headers. */
   .eyebrow {
-    font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+    font-family: 'Inter', sans-serif;
     font-size: 10px;
     font-weight: 500;
     letter-spacing: 0.18em;
@@ -225,7 +205,7 @@
     color: hsl(var(--muted-foreground));
   }
   .eyebrow-accent {
-    font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+    font-family: 'Inter', sans-serif;
     font-size: 10px;
     font-weight: 500;
     letter-spacing: 0.22em;
