@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
-import { Project, Sector, TecnicoProject, TECNICO_RESPONSAVEIS, TECNICO_PRIORIDADES, TECNICO_STATUS_OPTIONS } from "@/lib/mock-data";
+import { Project, Sector, TecnicoProject, TECNICO_RESPONSAVEIS, TECNICO_PRIORIDADES } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { getSectorTitle } from "@/lib/sectors";
 import { formatTelefone, formatDate as fmtDate3, formatCNPJ as fmtCNPJ3, parseISODate } from "@/lib/formatters";
@@ -43,14 +43,27 @@ const prioridadeColors: Record<string, string> = {
   "Crítica": "status-critico",
 };
 
-const statusTecnicoColors: Record<string, string> = {
-  "Não cadastradas no ESO": "status-critico",
-  "Não iniciadas": "status-nao-iniciado",
-  "Visita pendente": "status-andamento",
-  "Documentação pendente": "status-pendente",
-  "Revisão": "status-revisao",
-  "Finalizada": "status-concluido",
-  "Arquivado": "bg-orange-400/10 text-orange-400",
+// Cores fixas por status_key (não pelo título — assim continuam coerentes
+// mesmo quando o usuário renomeia a coluna no Quadro).
+const COLOR_BY_STATUS_KEY: Record<string, string> = {
+  not_authenticated: "status-critico",
+  not_started: "status-nao-iniciado",
+  pending: "status-andamento",
+  doc_pending: "status-pendente",
+  review: "status-revisao",
+  done: "status-concluido",
+};
+
+// Títulos legados que ainda podem existir no DB e devem mapear para a mesma cor.
+const LEGACY_TITLE_TO_KEY: Record<string, string> = {
+  "Não cadastradas no ESO": "not_authenticated",
+  "Não iniciadas": "not_started",
+  "Zona de espera": "not_started",
+  "Visita pendente": "pending",
+  "Documentação pendente": "doc_pending",
+  "Revisão": "review",
+  "Finalizada": "done",
+  "Finalizadas": "done",
 };
 
 // CNPJ mask: 00.000.000/0000-00
@@ -82,10 +95,29 @@ const isValidDate = (dateStr: string): boolean => {
 
 // Tecnico spreadsheet view
 const TecnicoSpreadsheet = () => {
-  const { tecnicoProjects, addTecnicoProject, updateTecnicoProject, deleteTecnicoProject, users } = useProjects();
+  const { tecnicoProjects, addTecnicoProject, updateTecnicoProject, deleteTecnicoProject, users, tecnicoColumnTitles } = useProjects();
   const [newRow, setNewRow] = useState<Omit<TecnicoProject, "id" | "sector"> | null>(null);
   const [editingProject, setEditingProject] = useState<TecnicoProject | null>(null);
   const [viewingProject, setViewingProject] = useState<TecnicoProject | null>(null);
+
+  // Opções e cores derivadas dos títulos editáveis do Kanban — sincronizadas em tempo real.
+  const STATUS_KEY_ORDER = ["not_authenticated", "not_started", "pending", "doc_pending", "review", "done"];
+  const dynamicStatusOptions: string[] = [
+    ...STATUS_KEY_ORDER.map((k) => tecnicoColumnTitles[k]).filter(Boolean),
+    "Arquivado",
+  ];
+  const statusTecnicoColors: Record<string, string> = (() => {
+    const out: Record<string, string> = { "Arquivado": "bg-orange-400/10 text-orange-400" };
+    // Títulos atuais (editados pelo usuário)
+    Object.entries(tecnicoColumnTitles).forEach(([key, title]) => {
+      if (title && COLOR_BY_STATUS_KEY[key]) out[title] = COLOR_BY_STATUS_KEY[key];
+    });
+    // Títulos legados ainda em uso no DB
+    Object.entries(LEGACY_TITLE_TO_KEY).forEach(([title, key]) => {
+      if (!out[title] && COLOR_BY_STATUS_KEY[key]) out[title] = COLOR_BY_STATUS_KEY[key];
+    });
+    return out;
+  })();
 
   // Filters
   const [showFilters, setShowFilters] = useState(false);
@@ -110,15 +142,19 @@ const TecnicoSpreadsheet = () => {
 
   // Weight maps for ordering by enum-like fields
   const prioridadeWeight: Record<string, number> = { "Baixa": 1, "Média": 2, "Alta": 3, "Crítica": 4 };
-  const statusWeight: Record<string, number> = {
-    "Não cadastradas no ESO": 1,
-    "Não iniciadas": 2,
-    "Visita pendente": 3,
-    "Documentação pendente": 4,
-    "Revisão": 5,
-    "Finalizada": 6,
-    "Arquivado": 7,
-  };
+  // Statuses ordenados por status_key fixo — mapeia tanto títulos atuais quanto legados.
+  const statusWeight: Record<string, number> = (() => {
+    const w: Record<string, number> = { "Arquivado": 7 };
+    STATUS_KEY_ORDER.forEach((key, i) => {
+      const title = tecnicoColumnTitles[key];
+      if (title) w[title] = i + 1;
+    });
+    Object.entries(LEGACY_TITLE_TO_KEY).forEach(([title, key]) => {
+      const idx = STATUS_KEY_ORDER.indexOf(key);
+      if (idx >= 0 && w[title] === undefined) w[title] = idx + 1;
+    });
+    return w;
+  })();
   const parseDate = (s?: string): number => {
     if (!s || !isValidDate(s)) return 0;
     const [dd, mm, yyyy] = s.split("/").map(Number);
@@ -189,7 +225,7 @@ const TecnicoSpreadsheet = () => {
   const handleAddRow = () => {
     setNewRow({
       empresa: "", cnpj: "", responsavel: "Caio", regiao: "", prioridade: "Baixa",
-      data: "", status_tecnico: "Não cadastradas no ESO",
+      data: "", status_tecnico: (tecnicoColumnTitles.not_authenticated || "Não cadastradas no ESO") as any,
       contato_nome: "", contato_telefone: "", contato_email: "", dados_extras: "",
     });
   };
@@ -348,7 +384,7 @@ const TecnicoSpreadsheet = () => {
                 <SelectTrigger className="h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  {TECNICO_STATUS_OPTIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                  {dynamicStatusOptions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -428,7 +464,7 @@ const TecnicoSpreadsheet = () => {
                   <td className="px-3 py-2">
                     <Select value={p.status_tecnico} onValueChange={(v) => updateTecnicoProject(p.id, { status_tecnico: v as any })}>
                       <SelectTrigger className={cn("h-8 text-[11px] rounded-lg border-0 font-medium", statusTecnicoColors[p.status_tecnico])}><SelectValue /></SelectTrigger>
-                      <SelectContent>{TECNICO_STATUS_OPTIONS.map((r) => <SelectItem key={r} value={r}><span className={cn("px-1.5 py-0.5 rounded text-xs", statusTecnicoColors[r])}>{r}</span></SelectItem>)}</SelectContent>
+                      <SelectContent>{dynamicStatusOptions.map((r) => <SelectItem key={r} value={r}><span className={cn("px-1.5 py-0.5 rounded text-xs", statusTecnicoColors[r])}>{r}</span></SelectItem>)}</SelectContent>
                     </Select>
                   </td>
                   <td className="px-3 py-2">
@@ -480,7 +516,7 @@ const TecnicoSpreadsheet = () => {
                   <td className="px-3 py-2">
                     <Select value={newRow.status_tecnico} onValueChange={(v) => setNewRow({ ...newRow, status_tecnico: v as any })}>
                       <SelectTrigger className="h-8 text-[11px] rounded-lg"><SelectValue /></SelectTrigger>
-                      <SelectContent>{TECNICO_STATUS_OPTIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                      <SelectContent>{dynamicStatusOptions.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                     </Select>
                   </td>
                   <td className="px-3 py-2 text-center">
@@ -607,7 +643,7 @@ const TecnicoSpreadsheet = () => {
                   <Label className="text-xs">Status</Label>
                   <Select value={editingProject.status_tecnico} onValueChange={(v) => setEditingProject({ ...editingProject, status_tecnico: v as any })}>
                     <SelectTrigger className="h-9 text-sm rounded-lg"><SelectValue /></SelectTrigger>
-                    <SelectContent>{TECNICO_STATUS_OPTIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                    <SelectContent>{dynamicStatusOptions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
               </div>
