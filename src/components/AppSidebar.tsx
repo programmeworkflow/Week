@@ -298,7 +298,7 @@ export const AppSidebar = () => {
                       <List className="w-3.5 h-3.5 stroke-[1.5]" />
                       {id === "comercial" ? "Treinamentos" : id === "financeiro" ? "Arquivadas" : "Projetos"}
                     </Link>
-                    {(id === "tecnico" || id === "psicossocial" || id === "saude") && (
+                    {(id === "tecnico" || id === "psicossocial" || id === "saude" || id === "financeiro") && (
                       <>
                         <Link
                           to={`/calendario/${id}`}

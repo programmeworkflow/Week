@@ -65,7 +65,7 @@ const CalendarioTecnico = () => {
 
   // Setores linkados: técnico, psicossocial e saúde compartilham o mesmo calendário
   // Reservas de carro são cross-sector (se psicossocial reserva, técnico vê e vice-versa)
-  const LINKED_SECTORS: Sector[] = ["tecnico", "psicossocial", "saude"];
+  const LINKED_SECTORS: Sector[] = ["tecnico", "psicossocial", "saude", "financeiro"];
   const isLinkedSector = LINKED_SECTORS.includes(currentSector);
 
   // Load compromissos + carros from Supabase
@@ -672,7 +672,7 @@ const CalendarioTecnico = () => {
                 <SelectContent>
                   <SelectItem value="nenhum">Nenhum</SelectItem>
                   {users
-                    .filter((u) => u.sectors?.some((s: any) => ["tecnico", "psicossocial", "saude"].includes(s)))
+                    .filter((u) => u.sectors?.some((s: any) => LINKED_SECTORS.includes(s)))
                     .map((u) => (
                       <SelectItem key={u.id} value={u.full_name}>{u.full_name}</SelectItem>
                     ))}
