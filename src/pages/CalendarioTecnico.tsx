@@ -365,7 +365,7 @@ const CalendarioTecnico = () => {
                   else if (events.length > 1) setDayEvents({ date: day, events });
                 }}
                 className={cn(
-                  "relative h-14 max-md:h-16 text-xs rounded-xl transition-all duration-200",
+                  "relative h-14 max-md:h-16 text-xs rounded-xl transition-all duration-200 overflow-hidden",
                   inMonth ? "text-foreground hover:bg-muted" : "text-muted-foreground/30",
                   isToday(day) && !events.length && "bg-primary/10 font-semibold text-primary",
                   events.length > 0 && "cursor-pointer ring-2 ring-primary/50 bg-primary/15 font-bold text-primary dark:shadow-[0_0_12px_rgba(34,197,94,0.3)]",
@@ -373,22 +373,32 @@ const CalendarioTecnico = () => {
                 )}
               >
                 <span className="block text-[13px]">{format(day, "d")}</span>
-                {events.length > 0 && (
-                  <div className="flex justify-center items-center gap-0.5 mt-0.5">
-                    {events.map((ev) => (
-                      <div key={ev.id} className="flex items-center gap-[2px]">
+                {events.length > 0 && (() => {
+                  // Limite visual: até 3 bolinhas + chip "+N". Ícones de carro/datashow
+                  // são agregados (mostram 1× se qualquer evento do dia usa).
+                  const MAX_DOTS = 3;
+                  const visible = events.slice(0, MAX_DOTS);
+                  const overflow = events.length - visible.length;
+                  const hasCarro = isLinkedSector && events.some((e) => e.usarCarro);
+                  const hasDataShow = isLinkedSector && events.some((e) => e.usarDataShow);
+                  return (
+                    <div className="flex justify-center items-center gap-[3px] mt-0.5 px-1 max-w-full">
+                      {visible.map((ev) => (
                         <span
-                          className={cn(
-                            "w-2.5 h-2.5 rounded-full",
-                            getTipoColor(ev.tipo)
-                          )}
+                          key={ev.id}
+                          className={cn("w-2 h-2 rounded-full flex-shrink-0", getTipoColor(ev.tipo))}
                         />
-                        {isLinkedSector && ev.usarCarro && <Car className="w-2.5 h-2.5 text-cyan-400" />}
-                        {isLinkedSector && ev.usarDataShow && <Monitor className="w-2.5 h-2.5 text-violet-400" />}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                      {overflow > 0 && (
+                        <span className="ml-[2px] px-1 py-[1px] rounded-full bg-primary/25 text-primary text-[8px] font-bold leading-none flex-shrink-0">
+                          +{overflow}
+                        </span>
+                      )}
+                      {hasCarro && <Car className="w-2.5 h-2.5 text-cyan-400 flex-shrink-0 ml-[2px]" />}
+                      {hasDataShow && <Monitor className="w-2.5 h-2.5 text-violet-400 flex-shrink-0" />}
+                    </div>
+                  );
+                })()}
               </button>
             );
           })}
